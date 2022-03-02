@@ -2,7 +2,7 @@ SECTIONS
 {
   	. = 0x80000;
   	.text : {
-    	KEEP(*(.text.boot))
+    	KEEP(*(.text.entry))
 		*(.text .text.* .gnu.linkonce.t.*)
 	}
 
@@ -30,4 +30,5 @@ SECTIONS
 	}
 }
 
+__stack_top = 0x20000000;
 __bss_size = (__bss_end - __bss_start) >> 3;

@@ -11,7 +11,8 @@ OUT_DIR = out
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OUT_DIR)/%.o)
 
-CFLAGS = -I include -c
+# -fno-stack-protector: to disable stack protection
+CFLAGS = -Wall -I include -c -fno-stack-protector 
 
 .PHONY: asm debug clean run
 

@@ -1,15 +1,23 @@
 #include "uart.h"
 #include "shell.h"
+#include "mailbox.h"
 
 #define MAX_BUFFER_SIZE 200
 
 int main() {
+    char cmd[MAX_BUFFER_SIZE];
+    
+    uart_puts("\n");
     uart_init();
 
-    uart_puts("UART initialized successfully! Type anything to try ...\n");
+    get_board_revision();
+    get_ARM_memory();
 
     while (1) {
-        uart_write(uart_read());
+        uart_puts("rp3> ");
+        shell_input(cmd);
+        shell_parse(cmd);
+        // uart_write(uart_read());
     }
     return 0;
 }

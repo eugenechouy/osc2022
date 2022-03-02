@@ -1,5 +1,6 @@
 #include "aux.h"
 #include "gpio.h"
+#include "uart.h"
 
 void uart_init() {
     
@@ -25,17 +26,15 @@ void uart_init() {
     // spec p.101
     *GPPUD = 0;                         // Write to GPPUD to set the required control signal
     r = 150;                            // Wait 150 cycles
-    while(r--) { 
-        asm volatile("nop"); 
-    }
+    while(r--) asm volatile("nop"); 
     *GPPUDCLK0 = (1<<14) | (1<<15);     // Write to GPPUDCLK0/1 to clock the control signal into the GPIO pads you wish to modify
     r = 150;                            // Wait 150 cycles
-    while(r--) { 
-        asm volatile("nop"); 
-    }
+    while(r--) asm volatile("nop");
     *GPPUDCLK0 = 0;                     // Write to GPPUDCLK0/1 to remove the clock 
 
     *AUX_MU_CNTL = 3;       // Enable the transmitter and receiver
+
+    uart_puts("UART initialized successfully!\n");
 }
 
 char uart_read() {
