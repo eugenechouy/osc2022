@@ -1,7 +1,8 @@
-
-kernel8.elf
-kernel8.img
+*.elf
+*.img
 *.o
 *.out
+*.d
 
+out/
 test/

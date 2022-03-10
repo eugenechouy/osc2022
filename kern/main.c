@@ -1,6 +1,6 @@
-#include "uart.h"
-#include "shell.h"
-#include "mailbox.h"
+#include "peripheral/uart.h"
+#include "peripheral/mailbox.h"
+#include "kern/shell.h"
 
 #define MAX_BUFFER_SIZE 200
 

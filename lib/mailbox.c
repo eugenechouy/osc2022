@@ -1,5 +1,5 @@
-#include "mailbox.h"
-#include "uart.h"
+#include "peripheral/mailbox.h"
+#include "peripheral/uart.h"
 #include "string.h"
 
 unsigned int mailbox_call(unsigned int* mailbox) {

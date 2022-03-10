@@ -1,6 +1,6 @@
-#include "uart.h"
+#include "peripheral/uart.h"
+#include "kern/shell.h"
 #include "string.h"
-#include "shell.h"
 #include "reset.h"
 
 void shell_input(char *cmd) {
@@ -9,6 +9,8 @@ void shell_input(char *cmd) {
 
     while((c = uart_read()) != '\n') {
         if (c == BACKSPACE || c == DELETE) {
+            if (!len) 
+                continue;
             LEFT_SHIFT
             uart_write(' ');
             LEFT_SHIFT

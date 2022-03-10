@@ -1,6 +1,6 @@
-#include "aux.h"
-#include "gpio.h"
-#include "uart.h"
+#include "peripheral/aux.h"
+#include "peripheral/gpio.h"
+#include "peripheral/uart.h"
 
 void uart_init() {
     
