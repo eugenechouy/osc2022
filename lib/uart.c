@@ -47,6 +47,13 @@ char uart_read() {
     return r == '\r' ? '\n' : r;
 }
 
+char uart_read_raw() {
+    do {
+        asm volatile("nop"); 
+    } while(!(*AUX_MU_LSR & 0x01));
+    return (char)(*AUX_MU_IO);
+}
+
 void uart_write(unsigned int c) {
     // Check AUX_MU_LSR_REG’s Transmitter empty field (Bit 5)
     do {
