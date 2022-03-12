@@ -19,7 +19,10 @@ OBJS   := $(patsubst %.c, $(OUT_DIR)/%.o, $(SRCS))
 OBJS   := $(patsubst %.S, $(OUT_DIR)/%.o, $(OBJS))
 
 # -fno-stack-protector: to disable stack protection
-CFLAGS := -Wall -I$(INC_DIR) -c -fno-stack-protector
+# -fno-builtin is required to avoid refs to undefined functions in the kernel.
+# Only optimize to -O1 to discourage inlining, which complicates backtraces.
+CFLAGS := -O1 -fno-builtin -nostdinc
+CFLAGS += -Wall -I$(INC_DIR) -c -fno-stack-protector
 
 .PHONY: asm debug clean run
 
@@ -45,6 +48,6 @@ asm: $(IMG)
 debug: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -S -s
 run: $(IMG)
-	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio
+	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio
 clean:
 	rm -rf $(OUT_DIR) $(ELF) $(IMG)

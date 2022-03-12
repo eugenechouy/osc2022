@@ -7,7 +7,6 @@
 int main() {
     char cmd[MAX_BUFFER_SIZE];
     
-    uart_puts("\n");
     uart_init();
 
     get_board_revision();
@@ -17,7 +16,6 @@ int main() {
         uart_puts("rp3> ");
         shell_input(cmd);
         shell_parse(cmd);
-        // uart_write(uart_read());
     }
     return 0;
 }

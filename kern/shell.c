@@ -1,5 +1,6 @@
 #include "peripheral/uart.h"
 #include "kern/shell.h"
+#include "kern/cpio.h"
 #include "string.h"
 #include "reset.h"
 
@@ -34,6 +35,8 @@ void shell_parse(char *cmd) {
         uart_puts("reboot\t: reboot the device\n");
     } else if (!strcmp(cmd, "hello")) {
         uart_puts("Hello World!\n");
+    } else if (!strcmp(cmd, "ls")) {
+        cpio_parse();
     } else if (!strcmp(cmd, "reboot")) {
         uart_puts("About to reboot...\n");
         reset(1000);

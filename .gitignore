@@ -3,6 +3,7 @@
 *.o
 *.out
 *.d
+*.cpio
 
 out/
 test/
