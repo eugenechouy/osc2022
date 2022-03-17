@@ -10,7 +10,6 @@ SECTIONS
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 	}
 
-  	/* Adjust the address for the data segment to the next page */
 	. = ALIGN(0x1000);
 
 	/* The data segment */
@@ -25,10 +24,15 @@ SECTIONS
 		BYTE(0)
 	}
 
+	. = ALIGN(0x1000);
+
+	__heap_start = .;
+
   	/DISCARD/ : {
 		*(.eh_frame .note.GNU-stack)
 	}
 }
 
 __stack_top = 0x20000000;
+__heap_end = __heap_start + 0x3200000;
 __bss_size = (__bss_end - __bss_start) >> 3;

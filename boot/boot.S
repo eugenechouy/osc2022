@@ -2,6 +2,8 @@
 
 .global _relocate
 _relocate:
+    // save dtb address
+    mov     x23, x0
 2:
     ldr     x0, = __stack_top
     mov     sp, x0

@@ -1,8 +1,8 @@
 #include "peripheral/uart.h"
 #include "kern/shell.h"
-#include "kern/cpio.h"
 #include "string.h"
 #include "reset.h"
+#include "cpio.h"
 
 void shell_input(char *cmd) {
     char c;
@@ -29,6 +29,7 @@ void shell_input(char *cmd) {
 }
 
 void shell_parse(char *cmd) {
+    char args[30];
     if (!strcmp(cmd, "help")) {                      
         uart_puts("help\t: print this help menu\n");
         uart_puts("hello\t: print Hello World!\n");
@@ -40,6 +41,10 @@ void shell_parse(char *cmd) {
     } else if (!strcmp(cmd, "reboot")) {
         uart_puts("About to reboot...\n");
         reset(1000);
+    } else if (!strcmp(cmd, "cat")) {
+        uart_puts("FileName: ");
+        shell_input(args);
+        cpio_cat(args);
     } else {
         uart_puts(cmd);
         uart_puts(": command not found\n");

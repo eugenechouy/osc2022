@@ -1,4 +1,10 @@
 
+unsigned int strlen(const char *str) {
+	const char *c;
+	for (c=str ; *c ; ++c);
+	return c - str;
+}
+
 int strcmp (const char *p1, const char *p2) {
 	const unsigned char *s1 = (const unsigned char *) p1;
 	const unsigned char *s2 = (const unsigned char *) p2;

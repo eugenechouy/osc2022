@@ -1,5 +1,7 @@
 
-extern unsigned char __begin, __end, __bootloader;
+extern unsigned char __begin;
+extern unsigned char __end;
+extern unsigned char __bootloader;
 
 __attribute__((section(".text.relocate"))) void relocate() {
     unsigned long size    = (&__end - &__begin);
