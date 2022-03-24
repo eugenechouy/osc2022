@@ -3,7 +3,7 @@
 #include "cpio.h"
 #include "byteswap.h"
 
-void *CPIO_ADDRESS = 0;
+void *CPIO_ADDRESS = 0x8000000;
 
 void initramfs_callback(char *node_name, char *prop_name, void *prop_value) {
     if (!strncmp(node_name, "chosen", 6) && !strncmp(prop_name, "linux,initrd-start", 18)) {

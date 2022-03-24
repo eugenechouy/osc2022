@@ -9,12 +9,11 @@ char FDT_HEADER_MAGIC[4] = {0xd0, 0x0d, 0xfe, 0xed};
 
 void *DTB_ADDRESS;
 
-void fdt_init() {
+int fdt_init() {
     asm volatile("MOV %0, x23" :  "=r"(DTB_ADDRESS));
     if (strncmp((char*)DTB_ADDRESS, FDT_HEADER_MAGIC, 4))
-        uart_puts("dtb: Bad magic\n");
-    else 
-        uart_puts("dtb: correct magic\n");
+        return -1;
+    return 0;
 }
 
 void fdt_traverse(void (*cb)(char *, char *, void *)) {

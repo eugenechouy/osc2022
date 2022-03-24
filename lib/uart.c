@@ -37,6 +37,11 @@ void uart_init() {
     uart_puts("UART initialized successfully!\n");
 }
 
+void uart_flush() {
+    while(*AUX_MU_LSR & 0x01) 
+        *AUX_MU_IO;
+}
+
 char uart_read() {
     char r;
     // Check AUX_MU_LSR_REG’s data ready field (Bit 0)

@@ -2,6 +2,7 @@
 #define UART_H
 
 void uart_init();
+void uart_flush();
 char uart_read();
 char uart_read_raw();
 void uart_write(unsigned int c);

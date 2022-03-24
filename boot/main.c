@@ -16,7 +16,7 @@ int main() {
     char buffer[64];
 
     uart_init();
-    uart_puts("You can start to send kernel image via UART...\n");
+    uart_flush();
 
     READ_INT(img_size);
     READ_INT(img_checksum);

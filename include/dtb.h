@@ -32,7 +32,7 @@ struct fdt_prop {
     unsigned int nameoff;
 };
 
-void fdt_init();
+int fdt_init();
 void fdt_traverse(void (*cb)(char *, char *, void *));
 
 #endif

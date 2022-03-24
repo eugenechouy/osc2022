@@ -11,6 +11,7 @@ int main() {
     char *cmd;
     
     uart_init();
+    uart_flush();
     uart_read();
 
     uart_puts("##########################################\n");
@@ -18,8 +19,12 @@ int main() {
     get_ARM_memory();
     uart_puts("##########################################\n");
 
-    fdt_init();
-    fdt_traverse(initramfs_callback);
+    if (fdt_init() >= 0) {
+        uart_puts("dtb: correct magic\n");
+        fdt_traverse(initramfs_callback);
+    } else 
+        uart_puts("dtb: Bad magic\n");
+
 
     cmd = simple_malloc(MAX_BUFFER_SIZE);
     while (1) {
