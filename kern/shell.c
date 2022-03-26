@@ -37,7 +37,7 @@ void shell_parse(char *cmd) {
     } else if (!strcmp(cmd, "hello")) {
         uart_puts("Hello World!\n");
     } else if (!strcmp(cmd, "ls")) {
-        cpio_parse();
+        cpio_ls();
     } else if (!strcmp(cmd, "reboot")) {
         uart_puts("About to reboot...\n");
         reset(1000);
@@ -45,6 +45,10 @@ void shell_parse(char *cmd) {
         uart_puts("FileName: ");
         shell_input(args);
         cpio_cat(args);
+    } else if (!strcmp(cmd, "exec")) {
+        uart_puts("FileName: ");
+        shell_input(args);
+        cpio_exec(args);
     } else {
         uart_puts(cmd);
         uart_puts(": command not found\n");

@@ -36,7 +36,6 @@ Get board revision
 */
 void get_board_revision(){
     unsigned int mailbox[7];
-    char         buffer[64];
 
     mailbox[0] = 7 * 4; // buffer size in bytes
     mailbox[1] = REQUEST_CODE;
@@ -51,9 +50,8 @@ void get_board_revision(){
     // message passing procedure call
     if (mailbox_call(mailbox) == REQUEST_SUCCEED) {
         // it should be 0xa020d3 for rpi3 b+
-        itoa(mailbox[5], buffer, 16);
         uart_puts("Board revision:\t\t\t0x");
-        uart_puts(buffer);
+        uart_printNum(mailbox[5], 16);
         uart_puts("\n");
         return;
     }
@@ -73,7 +71,6 @@ Get ARM memory
 */
 void get_ARM_memory() {
     unsigned int mailbox[8];
-    char         buffer[64];
 
     mailbox[0] = 8 * 4; // buffer size in bytes
     mailbox[1] = REQUEST_CODE;
@@ -88,13 +85,11 @@ void get_ARM_memory() {
 
     // message passing procedure call
     if (mailbox_call(mailbox) == REQUEST_SUCCEED) {
-        itoa(mailbox[5], buffer, 16);
         uart_puts("ARM memory base address:\t0x");
-        uart_puts(buffer);
+        uart_printNum(mailbox[5], 16);
         uart_puts("\n");
-        itoa(mailbox[6], buffer, 16);
         uart_puts("ARM memory size:\t\t0x");
-        uart_puts(buffer);
+        uart_printNum(mailbox[6], 16);
         uart_puts("\n");
         return;
     }

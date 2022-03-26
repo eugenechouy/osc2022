@@ -1,5 +1,4 @@
 #include "peripheral/uart.h"
-#include "string.h"
 
 #define KERNEL_ADDR 0x80000
 #define READ_INT(var) \
@@ -13,7 +12,6 @@ int main() {
     int img_size;
     int img_checksum;
     int i;
-    char buffer[64];
 
     uart_init();
     uart_flush();
@@ -21,11 +19,9 @@ int main() {
     READ_INT(img_size);
     READ_INT(img_checksum);
 
-    itoa(img_size, buffer, 10);
-    uart_puts(buffer); 
+    uart_printNum(img_size, 10);
     uart_puts("\n");
-    itoa(img_checksum, buffer, 10);
-    uart_puts(buffer); 
+    uart_printNum(img_checksum, 10);
     uart_puts("\n");
 
     for (i=0 ; i<img_size ; i++) {

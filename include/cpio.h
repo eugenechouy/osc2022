@@ -19,13 +19,14 @@ struct cpio_newc_header {
     char	c_devmajor[8];
     char	c_devminor[8];
     char	c_rdevmajor[8];
-    char	c_rdevminor[8];
+    char	sc_rdevminor[8];
     char	c_namesize[8];
     char	c_check[8];
 };
 
 void initramfs_callback(char *node_name, char *prop_name, void *prop_value);
-void cpio_parse();
+void cpio_ls();
 void cpio_cat(const char *filename);
+void cpio_exec(const char *filename);
 
 #endif

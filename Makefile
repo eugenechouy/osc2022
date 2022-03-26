@@ -46,7 +46,7 @@ $(OUT_DIR):
 asm: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -d in_asm
 debug: $(IMG)
-	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -S -s
+	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio -S -s
 run: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio
 clean:

@@ -1,6 +1,7 @@
 #include "peripheral/aux.h"
 #include "peripheral/gpio.h"
 #include "peripheral/uart.h"
+#include "string.h"
 
 void uart_init() {
     
@@ -73,4 +74,10 @@ void uart_puts(char *s) {
             uart_write('\r');
         uart_write(*s++);
     }
+}
+
+void uart_printNum(int num, int base) {
+    char buffer[64];
+    itoa(num, buffer, base);
+    uart_puts(buffer);
 }
