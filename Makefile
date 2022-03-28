@@ -15,8 +15,8 @@ SRCS   := $(wildcard kern/*.S)
 SRCS   += $(wildcard kern/*.c)
 SRCS   += $(wildcard lib/*.c)
 SRCS   := $(notdir $(SRCS))
-OBJS   := $(patsubst %.c, $(OUT_DIR)/%.o, $(SRCS))
-OBJS   := $(patsubst %.S, $(OUT_DIR)/%.o, $(OBJS))
+OBJS   := $(patsubst %.c, $(OUT_DIR)/%_c.o, $(SRCS))
+OBJS   := $(patsubst %.S, $(OUT_DIR)/%_s.o, $(OBJS))
 
 # -fno-stack-protector: to disable stack protection
 # -fno-builtin is required to avoid refs to undefined functions in the kernel.
@@ -32,11 +32,11 @@ $(IMG): $(ELF)
 $(ELF): $(OBJS) $(LINKER_FILE $(OUT_DIR)/boot.o
 	$(LD) -T $(LINKER_FILE) -o $(ELF) $(OBJS)
 
-$(OUT_DIR)/%.o: kern/%.S $(OUT_DIR)
+$(OUT_DIR)/%_s.o: kern/%.S $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
-$(OUT_DIR)/%.o: kern/%.c $(OUT_DIR)
+$(OUT_DIR)/%_c.o: kern/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
-$(OUT_DIR)/%.o: lib/%.c $(OUT_DIR)
+$(OUT_DIR)/%_c.o: lib/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(OUT_DIR):  

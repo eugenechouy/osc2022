@@ -13,6 +13,8 @@
                     uart_write('['); \
                     uart_write('C');
 
+#define MAX_INPUT_LEN 128
+
 void shell_input(char *cmd);
 void shell_parse(char *cmd);
 

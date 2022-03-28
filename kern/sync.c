@@ -1,4 +1,5 @@
 #include "peripheral/uart.h"
+#include "kern/timer.h"
 
 void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
     unsigned int svc_num; 

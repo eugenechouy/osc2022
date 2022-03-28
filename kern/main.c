@@ -34,7 +34,6 @@ int main() {
     } else 
         uart_puts("dtb: Bad magic\n");
 
-    core_timer_enable();
     cmd = simple_malloc(128);
     while (1) {
         uart_puts("raspi3> ");

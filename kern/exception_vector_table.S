@@ -59,7 +59,7 @@ exception_vector_table:
     // Exception from the current EL while using SP_ELx
     b sync_handler
     .align 7
-    b irq_handler
+    b irq_el1_handler
     .align 7
     b exception_handler
     .align 7
@@ -69,7 +69,7 @@ exception_vector_table:
     // Exception from a lower EL and at least one lower EL is AArch64
     b sync_handler
     .align 7
-    b irq_handler
+    b irq_el0_handler
     .align 7
     b exception_handler
     .align 7
@@ -99,8 +99,16 @@ sync_handler:
     load_all
     eret    
 
-irq_handler:
+irq_el1_handler:
     save_all
+    mov x0, 1
+    bl irq_main
+    load_all
+    eret    
+
+irq_el0_handler:
+    save_all
+    mov x0, 0
     bl irq_main
     load_all
     eret    

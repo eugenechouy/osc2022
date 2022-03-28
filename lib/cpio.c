@@ -60,12 +60,13 @@ void cpio_cat(const char *filename) {
     uart_puts("File not exists...\n");
 }
 
+extern void from_el1_to_el0(void *);
+
 void cpio_exec(const char *filename) {
     int i        = 0;
     int filesize = 0;
     int namesize = 0;
     struct cpio_newc_header *header;
-    char *target;
 
     for ( ; ; i+=namesize+filesize) {
         header = ((struct cpio_newc_header *)(CPIO_ADDRESS + i));
