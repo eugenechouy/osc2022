@@ -1,7 +1,25 @@
 #include "peripheral/aux.h"
 #include "peripheral/gpio.h"
 #include "peripheral/uart.h"
+#include "peripheral/interrupt.h"
 #include "string.h"
+
+#define ENABLE_IRQS_1_AUX   (*ENABLE_IRQS_1 |= AUX_INT)
+#define DISABLE_IRQS_1_AUX  (*DISABLE_IRQS_1 |= AUX_INT)
+
+// If this bit is set the interrupt line is asserted whenever the transmit FIFO is empty.
+#define ENABLE_TX_INT   (*AUX_MU_IER |= 2)
+#define DISABLE_TX_INT  (*AUX_MU_IER &= ~(2))
+
+#define MAX_BUFFER_SIZE 128
+
+char read_buffer[MAX_BUFFER_SIZE];
+char write_buffer[MAX_BUFFER_SIZE];
+
+int read_start, 
+    read_end;
+int write_start, 
+    write_end;
 
 void uart_init() {
     
@@ -35,7 +53,38 @@ void uart_init() {
 
     *AUX_MU_CNTL = 3;       // Enable the transmitter and receiver
 
-    uart_puts("UART initialized successfully!\n");
+    read_start = read_end = 0;
+    write_start = write_end = 0;
+
+    uart_sync_puts("UART initialized successfully!\n");
+}
+
+void uart_enable_int() {
+    // spec p.12
+    *AUX_MU_IER |= 1;
+    ENABLE_IRQS_1_AUX;
+}
+
+void uart_handler() {
+    DISABLE_IRQS_1_AUX;
+    char r;
+    int tx = *AUX_MU_IIR & 0b10;
+    int rx = *AUX_MU_IIR & 0b100;
+    if (rx) {
+        r = (char)(*AUX_MU_IO);
+        read_buffer[read_end] = r;
+        read_end = (read_end + 1) % MAX_BUFFER_SIZE;
+    } else if (tx) {
+        while(*AUX_MU_LSR & 0x20) {
+            if (write_start == write_end) {
+                DISABLE_TX_INT;
+                break;
+            }
+            *AUX_MU_IO = write_buffer[write_start];
+            write_start = (write_start + 1) % MAX_BUFFER_SIZE;
+        }
+    }
+    ENABLE_IRQS_1_AUX;
 }
 
 void uart_flush() {
@@ -43,7 +92,9 @@ void uart_flush() {
         *AUX_MU_IO;
 }
 
-char uart_read() {
+/* sync */
+
+char uart_sync_read() {
     char r;
     // Check AUX_MU_LSR_REG’s data ready field (Bit 0)
     do {
@@ -53,14 +104,14 @@ char uart_read() {
     return r == '\r' ? '\n' : r;
 }
 
-char uart_read_raw() {
+char uart_sync_read_raw() {
     do {
         asm volatile("nop"); 
     } while(!(*AUX_MU_LSR & 0x01));
     return (char)(*AUX_MU_IO);
 }
 
-void uart_write(unsigned int c) {
+void uart_sync_write(unsigned int c) {
     // Check AUX_MU_LSR_REG’s Transmitter empty field (Bit 5)
     do {
         asm volatile("nop"); 
@@ -68,16 +119,48 @@ void uart_write(unsigned int c) {
     *AUX_MU_IO = c;
 }
 
-void uart_puts(char *s) {
+void uart_sync_puts(char *s) {
     while(*s) {
         if (*s == '\n') 
-            uart_write('\r');
-        uart_write(*s++);
+            uart_sync_write('\r');
+        uart_sync_write(*s++);
     }
 }
 
-void uart_printNum(int num, int base) {
+void uart_sync_printNum(long num, int base) {
     char buffer[64];
     itoa(num, buffer, base);
-    uart_puts(buffer);
+    uart_sync_puts(buffer);
+}
+
+/* async */
+
+char uart_async_read() {
+    char r;
+    while (read_start == read_end) {
+        asm volatile("nop"); 
+    }
+    r = read_buffer[read_start];
+    read_start = (read_start + 1) % MAX_BUFFER_SIZE;
+    return r == '\r' ? '\n' : r;
+}
+
+void uart_async_write(unsigned int c) {
+    write_buffer[write_end] = c;
+    write_end = (write_end + 1) % MAX_BUFFER_SIZE;
+    ENABLE_TX_INT;
+}
+
+void uart_async_puts(char *s) {
+    while(*s) {
+        if (*s == '\n')
+            uart_async_write('\r');
+        uart_async_write(*s++);
+    }
+}
+
+void uart_async_printNum(long num, int base) {
+    char buffer[64];
+    itoa(num, buffer, base);
+    uart_async_puts(buffer);
 }

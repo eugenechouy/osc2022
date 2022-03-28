@@ -1,10 +1,9 @@
 #include "peripheral/uart.h"
 
-void svc_handler(unsigned long spsr, unsigned long elr, unsigned long esr) {
+void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
     unsigned int svc_num; 
 
     svc_num = esr & 0xFFFFFF;
-
     switch(svc_num) {
     case 0:
         uart_puts("\nspsr_el1: \t");
@@ -14,6 +13,10 @@ void svc_handler(unsigned long spsr, unsigned long elr, unsigned long esr) {
         uart_puts("\nesr_el1: \t");
         uart_printNum(esr, 16);
         uart_puts("\n");
+        break;
+    case 1:
+        uart_puts("svc 1\n");
+        core_timer_enable();
         break;
     case 4:
         uart_puts("svc 4\n");

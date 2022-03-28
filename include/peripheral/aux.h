@@ -31,4 +31,6 @@
 #define AUX_SPI1_IO     ((volatile unsigned int*)(AUX_BASE + 0xD0))
 #define AUX_SPI1_PEEK   ((volatile unsigned int*)(AUX_BASE + 0xD4))
 
+#define AUX_INT         (1 << 29)
+
 #endif

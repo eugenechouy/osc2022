@@ -66,8 +66,8 @@ void strrev(char* str, unsigned int len) {
 	}
 }
 
-int itoa(int num, char* str, int base) {
-	int sum = num;
+int itoa(long num, char* str, int base) {
+	long sum = num;
 	int i = 0;
 	int digit;
 	do {
@@ -85,8 +85,8 @@ int itoa(int num, char* str, int base) {
 	return 0;
 }
 
-int atoi(char* str, int base, unsigned int len) {
-	int num = 0;
+long atoi(char* str, int base, unsigned int len) {
+	long num = 0;
 	int i;
 	for (i=0 ; i<len ; i++) {
 		num = num * base;

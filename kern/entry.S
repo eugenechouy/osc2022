@@ -37,8 +37,8 @@ from_el2_to_el1:
 .global from_el1_to_el0
 from_el1_to_el0:
     msr elr_el1, x0
-    mov x0, 0b1111000000
-    msr spsr_el1, x0
+    mov x0, 0b0         // enable interrupt in EL0
+    msr spsr_el1, x0   
     mov x0, 0x10000000
     msr sp_el0, x0
     eret

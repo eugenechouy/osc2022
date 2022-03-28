@@ -5,7 +5,7 @@
             var = 0; \
             for (i=0 ; i<4 ; i++) {\
                 var <<= 8; \
-                var |= (int)uart_read_raw(); \
+                var |= (int)uart_sync_read_raw(); \
             } \
 
 int main() {
@@ -19,21 +19,21 @@ int main() {
     READ_INT(img_size);
     READ_INT(img_checksum);
 
-    uart_printNum(img_size, 10);
-    uart_puts("\n");
-    uart_printNum(img_checksum, 10);
-    uart_puts("\n");
+    uart_sync_printNum(img_size, 10);
+    uart_sync_puts("\n");
+    uart_sync_printNum(img_checksum, 10);
+    uart_sync_puts("\n");
 
     for (i=0 ; i<img_size ; i++) {
-        char b = uart_read_raw();
+        char b = uart_sync_read_raw();
         *((char*)KERNEL_ADDR + i) = b;
         img_checksum -= (int)b;
     }
 
     if (img_checksum != 0) {
-        uart_puts("Send img failed...\n");
+        uart_sync_puts("Send img failed...\n");
     } else {
-        uart_puts("Send img success!\n");
+        uart_sync_puts("Send img success!\n");
         void (*start)(void) = (void *)KERNEL_ADDR;
         start();
     }
