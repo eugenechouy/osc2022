@@ -47,6 +47,11 @@ void timer_el1_handler() {
 }
 
 
+void timer_init() {
+    head = 0;
+    tail = 0;
+}
+
 void add_timer(void (*callback)(char *), char *message, unsigned int duration) {
     struct timer_queue *new_timer = (struct timer_queue *)simple_malloc(sizeof(struct timer_queue));
     struct timer_queue *itr;

@@ -15,6 +15,7 @@ struct timer_queue *tail;
 
 void timer_el0_handler();
 void timer_el1_handler();
+void timer_init();
 void set_timeout(char *args);
 
 extern void core_timer_enable();

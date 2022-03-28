@@ -11,7 +11,7 @@
 #define ENABLE_TX_INT   (*AUX_MU_IER |= 2)
 #define DISABLE_TX_INT  (*AUX_MU_IER &= ~(2))
 
-#define MAX_BUFFER_SIZE 128
+#define MAX_BUFFER_SIZE 256
 
 char read_buffer[MAX_BUFFER_SIZE];
 char write_buffer[MAX_BUFFER_SIZE];

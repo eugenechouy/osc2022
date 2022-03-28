@@ -1,6 +1,7 @@
 #include "peripheral/uart.h"
 #include "peripheral/mailbox.h"
 #include "kern/shell.h"
+#include "kern/timer.h"
 #include "simple_alloc.h"
 #include "dtb.h"
 #include "cpio.h"
@@ -17,6 +18,7 @@ int main() {
     char *cmd;
     
     uart_init();
+    timer_init();
     uart_flush();
 
     int_enable();
