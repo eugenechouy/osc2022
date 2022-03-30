@@ -4,14 +4,11 @@
 #include "peripheral/interrupt.h"
 #include "string.h"
 
-#define ENABLE_IRQS_1_AUX   (*ENABLE_IRQS_1 |= AUX_INT)
-#define DISABLE_IRQS_1_AUX  (*DISABLE_IRQS_1 |= AUX_INT)
+#define MAX_BUFFER_SIZE 256
 
 // If this bit is set the interrupt line is asserted whenever the transmit FIFO is empty.
 #define ENABLE_TX_INT   (*AUX_MU_IER |= 2)
 #define DISABLE_TX_INT  (*AUX_MU_IER &= ~(2))
-
-#define MAX_BUFFER_SIZE 256
 
 char read_buffer[MAX_BUFFER_SIZE];
 char write_buffer[MAX_BUFFER_SIZE];
@@ -65,8 +62,13 @@ void uart_enable_int() {
     ENABLE_IRQS_1_AUX;
 }
 
-void uart_handler() {
+void uart_disable_int() {
+    *AUX_MU_IER = 0;
     DISABLE_IRQS_1_AUX;
+}
+
+
+void uart_handler() {
     char r;
     int tx = *AUX_MU_IIR & 0b10;
     int rx = *AUX_MU_IIR & 0b100;
@@ -84,7 +86,7 @@ void uart_handler() {
             write_start = (write_start + 1) % MAX_BUFFER_SIZE;
         }
     }
-    ENABLE_IRQS_1_AUX;
+    uart_enable_int();
 }
 
 void uart_flush() {
@@ -151,16 +153,27 @@ void uart_async_write(unsigned int c) {
     ENABLE_TX_INT;
 }
 
-void uart_async_puts(char *s) {
-    while(*s) {
-        if (*s == '\n')
-            uart_async_write('\r');
-        uart_async_write(*s++);
-    }
+void uart_async_write_buffer(unsigned int c) {
+    write_buffer[write_end] = c;
+    write_end = (write_end + 1) % MAX_BUFFER_SIZE;
 }
 
-void uart_async_printNum(long num, int base) {
+void uart_async_puts(char *s, int enable_tx) {
+    while(*s) {
+        if (*s == '\n')
+            uart_async_write_buffer('\r');
+        uart_async_write_buffer(*s++);
+    }
+    if (enable_tx) ENABLE_TX_INT;
+}
+
+void uart_async_printNum(long num, int base, int enable_tx) {
     char buffer[64];
     itoa(num, buffer, base);
-    uart_async_puts(buffer);
+    uart_async_puts(buffer, enable_tx);
+}
+
+void uart_write_flush() {
+    if (write_start != write_end) 
+        ENABLE_TX_INT;
 }

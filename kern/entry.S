@@ -2,6 +2,11 @@
 
 .global _start
 _start:
+
+    mrs     x1, mpidr_el1 // get cpu id
+    and     x1, x1, #3
+    cbnz    x1, spin 
+    
     bl      from_el2_to_el1
 
 el1_start:
@@ -20,9 +25,11 @@ loop:
 
 ready:
     bl      main
+
 spin: 
     wfe
     b       spin
+
 
 from_el2_to_el1:
     mov x0, (1 << 31)
@@ -30,7 +37,7 @@ from_el2_to_el1:
     mov x0, 0b1111000101
     msr spsr_el2, x0
     msr elr_el2, lr
-    ldr x0, = __stack_top
+    ldr x0, = __stack_kernel_top
     msr sp_el1, x0
     eret
 
@@ -39,6 +46,6 @@ from_el1_to_el0:
     msr elr_el1, x0
     mov x0, 0b0         // enable interrupt in EL0
     msr spsr_el1, x0   
-    mov x0, 0x10000000
+    ldr x0, = __stack_user_top
     msr sp_el0, x0
     eret

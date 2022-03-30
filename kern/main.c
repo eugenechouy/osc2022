@@ -2,17 +2,11 @@
 #include "peripheral/mailbox.h"
 #include "kern/shell.h"
 #include "kern/timer.h"
+#include "kern/irq.h"
+#include "kern/sched.h"
 #include "simple_alloc.h"
 #include "dtb.h"
 #include "cpio.h"
-
-void int_enable() {
-    asm volatile("msr DAIFClr, 0xf");
-}
-
-void int_disable() {
-    asm volatile("msr DAIFSet, 0xf");
-}
 
 int main() {
     char *cmd;
@@ -21,6 +15,7 @@ int main() {
     timer_init();
     uart_flush();
 
+    init_task_queue();
     int_enable();
     uart_enable_int();
     

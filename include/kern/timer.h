@@ -10,11 +10,12 @@ struct timer_queue {
     void (*callback)(char *);
 };
 
-struct timer_queue *head;
-struct timer_queue *tail;
+struct timer_queue *timer_head;
+struct timer_queue *timer_tail;
 
 void timer_el0_handler();
 void timer_el1_handler();
+void timer_unknown_handler();
 void timer_init();
 void set_timeout(char *args);
 
