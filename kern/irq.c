@@ -22,18 +22,20 @@ void int_disable() {
 
 void irq_main(int el_from) {
     int_disable();
+    task_state_update();
+
     if (*CORE0_IRQ_SRC & (1 << CNTPNSIRQ_INT)) { // Timer interrupt
+        timer_disable_int();
         if (el_from == 0) 
             task_create(timer_el0_handler, 0, 0);
         else if (el_from == 1) 
             task_create(timer_el1_handler, 0, 0);
         else 
             task_create(timer_unknown_handler, 0, 0);
-        core_timer_disable();
     } else if (*CORE0_IRQ_SRC & (1 << GPU_INT)) { // GPU interrupt
-        if (*IRQ_PENDING_1 & AUX_INT) {
+        if (*IRQ_PENDING_1 & AUX_INT) {   
+            uart_disable_int(); 
             task_create(uart_handler, 0, 1);
-            uart_disable_int();
         }
     }
     int_enable();

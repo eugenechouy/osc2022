@@ -7,7 +7,7 @@ struct timer_queue {
     char            message[128];
     struct timer_queue  *prev;
     struct timer_queue  *next; 
-    void (*callback)(char *);
+    void (*callback)(char *, unsigned long);
 };
 
 struct timer_queue *timer_head;
@@ -21,6 +21,8 @@ void set_timeout(char *args);
 
 extern void core_timer_enable();
 extern void core_timer_disable();
+extern void timer_enable_int();
+extern void timer_disable_int();
 
 
 #endif

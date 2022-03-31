@@ -4,7 +4,7 @@
 #include "peripheral/interrupt.h"
 #include "string.h"
 
-#define MAX_BUFFER_SIZE 256
+#define MAX_BUFFER_SIZE 1024
 
 // If this bit is set the interrupt line is asserted whenever the transmit FIFO is empty.
 #define ENABLE_TX_INT   (*AUX_MU_IER |= 2)
@@ -65,6 +65,7 @@ void uart_enable_int() {
 void uart_disable_int() {
     *AUX_MU_IER = 0;
     DISABLE_IRQS_1_AUX;
+    DISABLE_TX_INT;
 }
 
 
@@ -79,7 +80,6 @@ void uart_handler() {
     } else if (tx) {
         while(*AUX_MU_LSR & 0x20) {
             if (write_start == write_end) {
-                DISABLE_TX_INT;
                 break;
             }
             *AUX_MU_IO = write_buffer[write_start];
@@ -169,7 +169,10 @@ void uart_async_puts(char *s, int enable_tx) {
 
 void uart_async_printNum(long num, int base, int enable_tx) {
     char buffer[64];
-    itoa(num, buffer, base);
+    if (itoa(num, buffer, base) == -1) {
+        uart_async_puts("Error", enable_tx);
+        return;
+    }
     uart_async_puts(buffer, enable_tx);
 }
 

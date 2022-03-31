@@ -18,29 +18,25 @@ void set_expired(unsigned int seconds) {
 }
 
 void timer_el0_handler() {
-    uart_puts_int("Seconds after booting: ");
-    uart_printNum_int(get_current_time(), 10);
-    uart_puts_int("\n");
-    core_timer_enable();
+    uart_puts("Seconds after booting: ");
+    uart_printNum(get_current_time(), 10);
+    uart_puts("\n");
     set_expired(2);
+    timer_enable_int();
 }
 
 void timer_el1_handler() {
     struct timer_queue *next;
     unsigned long timeout;
 
-    uart_puts_int("Seconds after booting: ");
-    uart_printNum_int(get_current_time(), 10);
-    uart_puts_int("\n");
-
-    timer_head->callback(timer_head->message);
+    timer_head->callback(timer_head->message, timer_head->register_time);
     next = timer_head->next;
     if (next) {
         next->prev = 0;
         timer_head = next;
         timeout = next->register_time + next->duration - get_current_time();
-        core_timer_enable();
-        set_expired(timeout);      
+        set_expired(timeout);     
+        timer_enable_int(); 
     } else {
         timer_head = 0;
         timer_tail = 0;
@@ -48,8 +44,9 @@ void timer_el1_handler() {
 }
 
 void timer_unknown_handler() {
-    uart_puts_int("Timer interrupt: unknown source EL\n");
-    core_timer_enable();
+    uart_puts("Timer interrupt: unknown source EL, delay one seconds...\n");
+    set_expired(1);
+    timer_enable_int();
 }
 
 
@@ -58,7 +55,7 @@ void timer_init() {
     timer_tail = 0;
 }
 
-void add_timer(void (*callback)(char *), char *message, unsigned int duration) {
+void add_timer(void (*callback)(char *, unsigned long), char *message, unsigned int duration) {
     struct timer_queue *new_timer = (struct timer_queue *)simple_malloc(sizeof(struct timer_queue));
     struct timer_queue *itr;
     unsigned long timeout;
@@ -103,9 +100,15 @@ void add_timer(void (*callback)(char *), char *message, unsigned int duration) {
     }
 }
 
-void timer_callback(char *msg) {
-	uart_puts_int(msg);
-    uart_puts_int("\n");
+void timer_callback(char *msg, unsigned long register_time) {
+    uart_puts("\nSeconds after booting: ");
+    uart_printNum(get_current_time(), 10);
+    uart_puts("\n");
+	uart_puts(msg);
+    uart_puts(", ");
+    uart_puts("Register at: ");
+    uart_printNum(register_time, 10);
+    uart_puts("\n");
 }
 
 void set_timeout(char *args) {

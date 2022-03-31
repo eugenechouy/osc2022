@@ -21,3 +21,17 @@ core_timer_disable:
     ldr x1, =CORE0_TIMER_IRQ_CTRL
     str x0, [x1] // disable timer interrupt
     ret
+
+.global timer_enable_int
+timer_enable_int:
+    mov x0, 2
+    ldr x1, =CORE0_TIMER_IRQ_CTRL
+    str w0, [x1] // unmask timer interrupt
+    ret
+
+.globl timer_disable_int
+timer_disable_int:
+    mov x0, 0
+    ldr x1, =CORE0_TIMER_IRQ_CTRL
+    str x0, [x1] // disable timer interrupt
+    ret

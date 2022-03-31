@@ -1,6 +1,7 @@
 #include "peripheral/uart.h"
 #include "kern/shell.h"
 #include "kern/timer.h"
+#include "kern/sched.h"
 #include "string.h"
 #include "reset.h"
 #include "cpio.h"
@@ -39,6 +40,34 @@ void shell_help() {
     uart_puts("reboot\t\t: reboot the device\n");
 }
 
+#define TIME 1e7
+
+void dummpy_task2() {
+    uart_puts("dummy task high start\n");
+    int time = TIME;
+    int cnt = 1;
+    while(cnt--) {
+        while(time--) asm volatile("nop");
+        time = TIME;
+    }
+    uart_puts("dummy task high end\n");
+}
+
+void dummpy_task1() {
+    uart_puts("dummy task low start\n");
+    int time = TIME;
+    int cnt = 5;
+    while(time--) asm volatile("nop");
+    task_create(dummpy_task2, 0, 5);
+    uart_puts("\n");
+    while(cnt--) {
+        time = TIME;
+        while(time--) asm volatile("nop");
+    }
+    uart_puts("dummy task low end\n");
+}
+
+
 void shell_parse(char *cmd) {
     char args[MAX_INPUT_LEN];
     if (!strcmp(cmd, "help")) {
@@ -61,6 +90,9 @@ void shell_parse(char *cmd) {
     } else if (!strcmp(cmd, "reboot")) {
         uart_puts("About to reboot...\n");
         reset(1000);
+    } else if (!strcmp(cmd, "test")) {
+        task_create(dummpy_task1, 0, 10);
+        uart_puts("\n");
     } else {
         uart_puts(cmd);
         uart_puts(": command not found\n");

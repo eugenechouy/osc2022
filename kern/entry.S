@@ -2,10 +2,6 @@
 
 .global _start
 _start:
-
-    mrs     x1, mpidr_el1 // get cpu id
-    and     x1, x1, #3
-    cbnz    x1, spin 
     
     bl      from_el2_to_el1
 

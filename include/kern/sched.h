@@ -4,7 +4,7 @@
 #define MAX_TASK_NUM 64
 
 enum task_state {
-    RUNNING, READY, WAITING
+    RUNNING, READY, WAITING, INT, DEAD
 };
 
 struct task_struct {
@@ -35,5 +35,6 @@ struct task_struct task_pool[MAX_TASK_NUM];
 void init_task_queue();
 void task_create(void (*cb)(void*), void *args, int prio);
 void task_run();
+void task_state_update();
 
 #endif 
