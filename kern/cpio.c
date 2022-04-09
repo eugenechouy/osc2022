@@ -1,13 +1,13 @@
-#include "peripheral/uart.h"
+#include "kern/kio.h"
+#include "kern/cpio.h"
 #include "string.h"
-#include "cpio.h"
 #include "byteswap.h"
 
-void *CPIO_ADDRESS = 0x8000000;
+void *CPIO_ADDRESS = (void*)0x8000000;
 
 void initramfs_callback(char *node_name, char *prop_name, void *prop_value) {
     if (!strncmp(node_name, "chosen", 6) && !strncmp(prop_name, "linux,initrd-start", 18)) {
-        uart_puts("cpio: Find!\n");
+        kputs("cpio: Find!\n");
         CPIO_ADDRESS = (void*)__bswap_32(*((unsigned int *)(prop_value)));
     }
 }
@@ -21,7 +21,7 @@ void cpio_ls() {
     for ( ; ; i+=namesize+filesize) {
         header = ((struct cpio_newc_header *)(CPIO_ADDRESS + i));
         if (strncmp(header->c_magic, CPIO_MAGIC, 6)) {
-            uart_puts("cpio: Bad magic\n");
+            kputs("cpio: Bad magic\n");
             break;
         }
         filesize = (atoi(header->c_filesize, 16, 8) + 3) & -4;
@@ -29,8 +29,8 @@ void cpio_ls() {
         i += sizeof(struct cpio_newc_header);
         if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10))
             break;
-        uart_puts((char *)(CPIO_ADDRESS + i));
-        uart_puts("\n");
+        kputs((char *)(CPIO_ADDRESS + i));
+        kputs("\n");
     }
 }
 
@@ -43,21 +43,21 @@ void cpio_cat(const char *filename) {
     for ( ; ; i+=namesize+filesize) {
         header = ((struct cpio_newc_header *)(CPIO_ADDRESS + i));
         if (strncmp(header->c_magic, CPIO_MAGIC, 6)) {
-            uart_puts("cpio: Bad magic\n");
+            kputs("cpio: Bad magic\n");
             break;
         }
         filesize = (atoi(header->c_filesize, 16, 8) + 3) & -4;
         namesize = ((atoi(header->c_namesize, 16, 8) + 6 + 3) & -4) - 6;
         i += sizeof(struct cpio_newc_header);
         if (!strcmp((char *)(CPIO_ADDRESS + i), filename)) {
-            uart_puts((char *)(CPIO_ADDRESS + i + namesize));
-            uart_puts("\n");
+            kputs((char *)(CPIO_ADDRESS + i + namesize));
+            kputs("\n");
             return;
         }
         if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10))
             break;
     }
-    uart_puts("File not exists...\n");
+    kputs("File not exists...\n");
 }
 
 extern void from_el1_to_el0(void *);
@@ -71,7 +71,7 @@ void cpio_exec(const char *filename) {
     for ( ; ; i+=namesize+filesize) {
         header = ((struct cpio_newc_header *)(CPIO_ADDRESS + i));
         if (strncmp(header->c_magic, CPIO_MAGIC, 6)) {
-            uart_puts("cpio: Bad magic\n");
+            kputs("cpio: Bad magic\n");
             break;
         }
         filesize = (atoi(header->c_filesize, 16, 8) + 3) & -4;
@@ -80,7 +80,7 @@ void cpio_exec(const char *filename) {
         if (!strcmp((char *)(CPIO_ADDRESS + i), filename))
             break;
         if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10)) {
-            uart_puts("File not exists...\n");
+            kputs("File not exists...\n");
             return;
         }
     }

@@ -1,5 +1,4 @@
 #include "peripheral/mailbox.h"
-#include "peripheral/uart.h"
 #include "string.h"
 
 unsigned int mailbox_call(unsigned int* mailbox) {
@@ -34,7 +33,7 @@ Get board revision
         Value:
             u32: board revision
 */
-void get_board_revision(){
+void get_board_revision(unsigned int *result){
     unsigned int mailbox[7];
 
     mailbox[0] = 7 * 4; // buffer size in bytes
@@ -50,12 +49,8 @@ void get_board_revision(){
     // message passing procedure call
     if (mailbox_call(mailbox) == REQUEST_SUCCEED) {
         // it should be 0xa020d3 for rpi3 b+
-        uart_puts("Board revision:\t\t\t0x");
-        uart_printNum(mailbox[5], 16);
-        uart_puts("\n");
-        return;
+        result[0] = mailbox[5];
     }
-    uart_puts("Mailbox read failed...\n"); 
 }
 
 /*
@@ -69,7 +64,7 @@ Get ARM memory
             u32: base address in bytes
             u32: size in bytes
 */
-void get_ARM_memory() {
+void get_ARM_memory(unsigned int *result) {
     unsigned int mailbox[8];
 
     mailbox[0] = 8 * 4; // buffer size in bytes
@@ -85,13 +80,7 @@ void get_ARM_memory() {
 
     // message passing procedure call
     if (mailbox_call(mailbox) == REQUEST_SUCCEED) {
-        uart_puts("ARM memory base address:\t0x");
-        uart_printNum(mailbox[5], 16);
-        uart_puts("\n");
-        uart_puts("ARM memory size:\t\t0x");
-        uart_printNum(mailbox[6], 16);
-        uart_puts("\n");
-        return;
+        result[0] = mailbox[5];
+        result[1] = mailbox[6];
     }
-    uart_puts("Mailbox read failed...\n"); 
 }

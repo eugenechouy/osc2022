@@ -1,4 +1,3 @@
-#include "simple_alloc.h"
 
 extern unsigned int __heap_start;
 extern unsigned int __heap_end;

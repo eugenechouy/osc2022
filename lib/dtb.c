@@ -1,6 +1,5 @@
-#include "peripheral/uart.h"
-#include "string.h"
 #include "dtb.h"
+#include "string.h"
 #include "byteswap.h"
 
 #define align4(num) ((num + 3) & (-4))
@@ -16,7 +15,7 @@ int fdt_init() {
     return 0;
 }
 
-void fdt_traverse(void (*cb)(char *, char *, void *)) {
+int fdt_traverse(void (*cb)(char *, char *, void *)) {
     unsigned int token;
     void *ptr;
     void *struct_block;
@@ -44,8 +43,8 @@ void fdt_traverse(void (*cb)(char *, char *, void *)) {
         } else if (token == FDT_END) {
             break;
         } else {
-            uart_puts("dtb: unknown TOKEN\n");
-            break;
+            return -1;
         }
     }
+    return 0;
 }

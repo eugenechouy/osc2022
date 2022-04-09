@@ -47,7 +47,7 @@ Mailbox 0 defines the following channels:
 #define MAILBOX_CH_VC2ARM   9  
 
 unsigned int mailbox_call(unsigned int* mailbox);
-void get_board_revision();
-void get_ARM_memory();
+void get_board_revision(unsigned int *result);
+void get_ARM_memory(unsigned int *result);
 
 #endif

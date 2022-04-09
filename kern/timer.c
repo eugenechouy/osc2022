@@ -1,5 +1,5 @@
-#include "peripheral/uart.h"
 #include "kern/timer.h"
+#include "kern/kio.h"
 #include "simple_alloc.h"
 #include "string.h"
 
@@ -18,9 +18,9 @@ void set_expired(unsigned int seconds) {
 }
 
 void timer_el0_handler() {
-    uart_puts("Seconds after booting: ");
-    uart_printNum(get_current_time(), 10);
-    uart_puts("\n");
+    kputs("Seconds after booting: ");
+    kputn(get_current_time(), 10);
+    kputs("\n");
     set_expired(2);
     timer_enable_int();
 }
@@ -44,7 +44,7 @@ void timer_el1_handler() {
 }
 
 void timer_unknown_handler() {
-    uart_puts("Timer interrupt: unknown source EL, delay one seconds...\n");
+    kputs("Timer interrupt: unknown source EL, delay one seconds...\n");
     set_expired(1);
     timer_enable_int();
 }
@@ -101,14 +101,14 @@ void add_timer(void (*callback)(char *, unsigned long), char *message, unsigned 
 }
 
 void timer_callback(char *msg, unsigned long register_time) {
-    uart_puts("\nSeconds after booting: ");
-    uart_printNum(get_current_time(), 10);
-    uart_puts("\n");
-	uart_puts(msg);
-    uart_puts(", ");
-    uart_puts("Register at: ");
-    uart_printNum(register_time, 10);
-    uart_puts("\n");
+    kputs("\nSeconds after booting: ");
+    kputn(get_current_time(), 10);
+    kputs("\n");
+	kputs(msg);
+    kputs(", ");
+    kputs("Register at: ");
+    kputn(register_time, 10);
+    kputs("\n");
 }
 
 void set_timeout(char *args) {
@@ -121,17 +121,17 @@ void set_timeout(char *args) {
         break;
     }
     if (message_end == -1) {
-        uart_puts("setTimeout: MESSAGE SECONDS\n");
+        kputs("setTimeout: MESSAGE SECONDS\n");
         return;
     }
     args[message_end] = '\0';
     duration = atoi(args+message_end+1, 10, strlen(args+message_end+1));
     if (duration <= 0 || duration >= 35) {
-        uart_puts("setTimeout: time error\n");
+        kputs("setTimeout: time error\n");
         return;
     }
-    uart_puts("Timeout: ");
-    uart_printNum(duration, 10);
-    uart_puts("s\n");
+    kputs("Timeout: ");
+    kputn(duration, 10);
+    kputs("s\n");
     add_timer(timer_callback, args, duration);
 }

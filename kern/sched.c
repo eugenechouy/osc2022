@@ -21,7 +21,7 @@ inline int get_tid() {
     return -1;
 }
 
-void init_task_queue() {
+void task_queue_init() {
     task_queue_head = 0;
     current = 0;
     for(int i=0 ; i<MAX_TASK_NUM ; i++) {

@@ -1,41 +1,52 @@
-#include "peripheral/uart.h"
 #include "peripheral/mailbox.h"
 #include "kern/shell.h"
 #include "kern/timer.h"
 #include "kern/irq.h"
 #include "kern/sched.h"
-#include "simple_alloc.h"
+#include "kern/kio.h"
+#include "kern/cpio.h"
 #include "dtb.h"
-#include "cpio.h"
 
-int main() {
-    char *cmd;
+void hw_info() {
+    unsigned int result[2];
+    kputs("##########################################\n");
     
-    uart_init();
-    timer_init();
-    uart_flush();
+    get_board_revision(result);
+    kputs("Board revision:\t\t\t0x");
+    kputn(result[0], 16);
+    kputs("\n");
 
-    init_task_queue();
-    int_enable();
-    uart_enable_int();
+    get_ARM_memory(result);
+    kputs("ARM memory base address:\t0x");
+    kputn(result[0], 16);
+    kputs("\n");
+    kputs("ARM memory size:\t\t0x");
+    kputn(result[1], 16);
+    kputs("\n");
     
-    uart_read();
-    uart_puts("##########################################\n");
-    get_board_revision();
-    get_ARM_memory();
-    uart_puts("##########################################\n");
+    kputs("##########################################\n");
+}
 
-    if (fdt_init() >= 0) {
-        uart_puts("dtb: correct magic\n");
-        fdt_traverse(initramfs_callback);
-    } else 
-        uart_puts("dtb: Bad magic\n");
-
-    cmd = simple_malloc(128);
-    while (1) {
-        uart_puts("raspi3> ");
-        shell_input(cmd);
-        shell_parse(cmd);
+void rootfs_init() {
+    if (fdt_init() < 0) {
+        kputs("dtb: Bad magic\n");
+        return;
     }
-    return 0;
+    if (fdt_traverse(initramfs_callback) < 0)
+        kputs("dtb: Unknown token\n");
+    kputs("dtb: init success\n");
+}
+
+void kern_main() { 
+    kio_init();
+    timer_init();
+    task_queue_init();
+    int_enable();
+    
+    kputs("press any key to continue...");
+    kscanc();
+    rootfs_init();
+    hw_info();
+
+    shell_start();
 }

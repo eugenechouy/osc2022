@@ -20,7 +20,7 @@ loop:
     cbnz    x1, loop
 
 ready:
-    bl      main
+    bl      kern_main
 
 spin: 
     wfe

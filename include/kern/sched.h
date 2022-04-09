@@ -32,7 +32,7 @@ struct task_struct *task_queue_head;
 
 struct task_struct task_pool[MAX_TASK_NUM];
 
-void init_task_queue();
+void task_queue_init();
 void task_create(void (*cb)(void*), void *args, int prio);
 void task_run();
 void task_state_update();

@@ -158,22 +158,22 @@ void uart_async_write_buffer(unsigned int c) {
     write_end = (write_end + 1) % MAX_BUFFER_SIZE;
 }
 
-void uart_async_puts(char *s, int enable_tx) {
+void uart_async_puts(char *s) {
     while(*s) {
         if (*s == '\n')
             uart_async_write_buffer('\r');
         uart_async_write_buffer(*s++);
     }
-    if (enable_tx) ENABLE_TX_INT;
+    ENABLE_TX_INT;
 }
 
-void uart_async_printNum(long num, int base, int enable_tx) {
+void uart_async_printNum(long num, int base) {
     char buffer[64];
     if (itoa(num, buffer, base) == -1) {
-        uart_async_puts("Error", enable_tx);
+        uart_async_puts("Error");
         return;
     }
-    uart_async_puts(buffer, enable_tx);
+    uart_async_puts(buffer);
 }
 
 void uart_write_flush() {
