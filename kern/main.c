@@ -5,6 +5,7 @@
 #include "kern/sched.h"
 #include "kern/kio.h"
 #include "kern/cpio.h"
+#include "kern/mm.h"
 #include "dtb.h"
 
 void hw_info() {
@@ -37,6 +38,31 @@ void rootfs_init() {
     kputs("dtb: init success\n");
 }
 
+void kmalloc_test() {
+    void *addr = kmalloc(19);
+    kputn((long)addr, 16);
+    kputs("\n");
+
+    kfree(addr);
+
+    void *addr2 = kmalloc(20);
+    kputn((long)addr2, 16);
+    kputs("\n");
+
+    addr = kmalloc(19);
+    kputn((long)addr, 16);
+    kputs("\n");
+
+    addr = kmalloc(256);
+    kputn((long)addr, 16);
+    kputs("\n");
+
+    addr = kmalloc(8142);
+    kputn((long)addr, 16);
+    kputs("\n");
+}
+
+
 void kern_main() { 
     kio_init();
     timer_init();
@@ -47,6 +73,10 @@ void kern_main() {
     kscanc();
     rootfs_init();
     hw_info();
+
+    mm_init();
+
+    kmalloc_test();
 
     shell_start();
 }

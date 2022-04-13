@@ -31,4 +31,6 @@ static inline char kscanc() {
     return uart_async_read();
 }
 
+void kprintf(char* fmt, ...);
+
 #endif

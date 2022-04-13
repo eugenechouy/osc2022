@@ -26,7 +26,7 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
         kputs("svc 4\n");
         break;
     default:
-        kputs("Undefined svc number\n");
-        break;
+        uart_sync_puts("Undefined svc number, panic\n");
+        while(1);
     }
 }
