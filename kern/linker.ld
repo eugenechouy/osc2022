@@ -35,5 +35,4 @@ SECTIONS
 
 __stack_kernel_top 	= 0x20000000;
 __stack_user_top 	= 0x30000000;
-__heap_end = __heap_start + 0x3200000;
 __bss_size = (__bss_end - __bss_start) >> 3;

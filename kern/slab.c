@@ -1,6 +1,6 @@
 #include "kern/mm.h"
 #include "kern/kio.h"
-#include "simple_alloc.h"
+#include "startup_alloc.h"
 
 #define PREALLOC_SIZE 100
 
@@ -9,7 +9,7 @@
 */
 struct slab_t* pmalloc_slab() {
     struct slab_t *ret;
-    ret = (struct slab_t *)simple_malloc(sizeof(struct slab_t));
+    ret = (struct slab_t *)sumalloc(sizeof(struct slab_t));
     return ret;
 }
 
@@ -25,7 +25,7 @@ void printslab(struct slab_t* slab) {
 struct kmem_pool *kmalloc_pools;
 
 void slab_alloc_ds() {
-    kmalloc_pools = (struct kmem_pool *)simple_malloc(sizeof(struct kmem_pool) * MAX_OBJ_CACHE_NUM);
+    kmalloc_pools = (struct kmem_pool *)sumalloc(sizeof(struct kmem_pool) * MAX_OBJ_CACHE_NUM);
 }
 
 struct kmem_pool* kmalloc_slab(unsigned int size) {

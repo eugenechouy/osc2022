@@ -35,4 +35,6 @@ struct fdt_prop {
 int fdt_init();
 int fdt_traverse(void (*cb)(char *, char *, void *));
 
+void fdt_reserve();
+
 #endif

@@ -1,6 +1,6 @@
 #include "kern/timer.h"
 #include "kern/kio.h"
-#include "simple_alloc.h"
+#include "startup_alloc.h"
 #include "string.h"
 
 struct timer_queue *timer_head;
@@ -59,7 +59,7 @@ void timer_init() {
 }
 
 void add_timer(void (*callback)(char *, unsigned long), char *message, unsigned int duration) {
-    struct timer_queue *new_timer = (struct timer_queue *)simple_malloc(sizeof(struct timer_queue));
+    struct timer_queue *new_timer = (struct timer_queue *)sumalloc(sizeof(struct timer_queue));
     struct timer_queue *itr;
     unsigned long timeout;
     int i;

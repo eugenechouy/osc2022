@@ -1,12 +1,14 @@
 #include "dtb.h"
 #include "string.h"
 #include "byteswap.h"
+#include "kern/mm.h"
 
 #define align4(num) ((num + 3) & (-4))
 
 char FDT_HEADER_MAGIC[4] = {0xd0, 0x0d, 0xfe, 0xed};
 
-void *DTB_ADDRESS;
+void *DTB_ADDRESS = 0;
+void *DTB_END_ADR = 0;
 
 int fdt_init() {
     asm volatile("MOV %0, x23" :  "=r"(DTB_ADDRESS));
@@ -46,5 +48,12 @@ int fdt_traverse(void (*cb)(char *, char *, void *)) {
             return -1;
         }
     }
+    DTB_END_ADR = ptr;
     return 0;
+}
+
+void fdt_reserve() {
+    if (!DTB_END_ADR) 
+        return;
+    mm_reserve(DTB_ADDRESS, DTB_END_ADR);
 }

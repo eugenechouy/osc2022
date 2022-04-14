@@ -7,6 +7,7 @@
 #include "kern/cpio.h"
 #include "kern/mm.h"
 #include "dtb.h"
+#include "startup_alloc.h"
 
 void hw_info() {
     unsigned int result[2];
@@ -51,17 +52,22 @@ void kmalloc_test() {
     kputn((long)addr2, 16);
     kputs("\n");
 
-    addr = kmalloc(19);
-    kputn((long)addr, 16);
-    kputs("\n");
-
-    addr = kmalloc(256);
-    kputn((long)addr, 16);
-    kputs("\n");
-
     addr = kmalloc(8142);
     kputn((long)addr, 16);
     kputs("\n");
+}
+
+extern unsigned int __stack_kernel_top;
+
+void reserve_memory() {
+    // page used by startup allocator
+    reserved_kern_startup();
+    // device tree 
+    fdt_reserve();
+    // initramfs
+    cpio_reserve();
+    // kernel stack 1MB
+    mm_reserve((void *)&__stack_kernel_top - 0x100000, (void *)&__stack_kernel_top);
 }
 
 
@@ -77,7 +83,8 @@ void kern_main() {
     hw_info();
 
     mm_init();
-
+    reserve_memory();
+    
     kmalloc_test();
 
     shell_start();

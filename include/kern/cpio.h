@@ -29,4 +29,6 @@ void cpio_ls();
 void cpio_cat(const char *filename);
 void cpio_exec(const char *filename);
 
+void cpio_reserve();
+
 #endif

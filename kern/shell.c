@@ -3,9 +3,9 @@
 #include "kern/timer.h"
 #include "kern/sched.h"
 #include "kern/cpio.h"
+#include "kern/mm.h"
 #include "string.h"
 #include "reset.h"
-#include "simple_alloc.h"
 
 #define TIME 1e7
 
@@ -101,7 +101,7 @@ void shell_parse(char *cmd) {
 
 void shell_start() {
     char *cmd;
-    cmd = simple_malloc(128);
+    cmd = kmalloc(128);
     while (1) {
         kputs("raspi3> ");
         shell_input(cmd);

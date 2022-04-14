@@ -30,7 +30,7 @@ memory layout
 
 #include "kern/mm.h"
 #include "kern/kio.h"
-#include "simple_alloc.h"
+#include "startup_alloc.h"
 
 #include "string.h"
 #include "byteswap.h"
@@ -54,11 +54,12 @@ struct free_area *free_area;
 struct page *frames;
 
 void buddy_alloc_ds() {
-    frames = (struct page *)simple_malloc(sizeof(struct page) * PHY_FRAMES_NUM);
-    free_area = (struct free_area *)simple_malloc(sizeof(struct free_area) * MAX_ORDER);
+    frames = (struct page *)sumalloc(sizeof(struct page) * PHY_FRAMES_NUM);
+    free_area = (struct free_area *)sumalloc(sizeof(struct free_area) * MAX_ORDER);
 }
 
 void printpg(struct page *page) {
+    kputs("alloc buddy: ");
     kputn(page->pg_index, 10);
     kputs(", ");
     kputn(page->pg_index*PAGE_SIZE, 16);
@@ -179,7 +180,7 @@ void mm_init() {
     int cnt = 0;
     int order = MAX_ORDER - 1;
 
-    int kernel_data_end   = __heap_start / PAGE_SIZE;
+    int kernel_data_end   = (long)(&__heap_start) / PAGE_SIZE;
     int mem_end           = phy_address_limit / PAGE_SIZE - 10;
 
     buddy_alloc_ds();
@@ -190,7 +191,7 @@ void mm_init() {
         free_area[i].nr_free = 0;
     }
 
-    for (i=0 ; i<=kernel_data_end ; i++) {
+    for (i=0 ; i<kernel_data_end ; i++) {
         frames[i].flags          = PG_USED;
         frames[i].pg_index       = i;
         frames[i].compound_order = 0;
@@ -227,16 +228,66 @@ void mm_init() {
     slab_init();
 }
 
-void test_mm() {
-    struct page *page[10];
-    for(int i=0 ; i<10 ; i++) {
-        page[i] = alloc_pages(0);
-        printpg(page[i]);
+
+void expand_reserve(struct page *page, unsigned int l, unsigned int r) {
+    struct page *buddy;
+    unsigned int porder = page->compound_order;
+    unsigned int cl     = page->pg_index;
+    unsigned int cr     = cl + (1 << porder) - 1;
+    unsigned int mid;
+
+    if (cl > r || cr < l) {
+        add_to_free_area(page, &free_area[porder]);
+        return;
+    }
+    // no need to split
+    if (cl >= l && cr <= r) {
+        kputs("Reserved range: ");
+        kputn(cl, 10);
+        kputs("-");
+        kputn(cr, 10);
+        kputs("\n");
+        page->flags = PG_USED;
+        return;
+    }
+    // split
+    mid = (cl + cr) >> 1;
+    porder--;
+    buddy = &frames[mid+1];
+    page->compound_order  = porder;
+    buddy->flags          = PG_HEAD;
+    buddy->compound_order = porder;
+    expand_reserve(page, l, r);
+    expand_reserve(buddy, l, r);
+}
+
+// Mark the page from start to end as used
+void mm_reserve(void *start, void *end) {
+    unsigned int ps = PHY_2_PFN(start);
+    unsigned int pe = PHY_2_PFN(end);
+    unsigned int pi = ps;
+    struct page page;   
+    int i;
+
+    kputs("Reserve ");
+    kputn(ps, 10); kputs(" to ");kputn(pe, 10); kputs("(");
+    kputn((long)start, 16); kputs(" to ");kputn((long)end, 16);
+    kputs(")\n");
+
+    for (i=ps ; i<=pe ; i++) if (frames[i].flags == PG_USED) {
+        kputs("Try to reserved page that are already been used...\n");
+        return;
     }
 
-    kputs("\n\n\n");
-
-    for(int i=0 ; i<10 ; i++) {
-        free_pages(page[i]);
-    }
+    do {
+        // find the header page of start address, linear search for now
+        while(pi >= 0) {
+            page = frames[pi--];
+            if (page.flags == PG_HEAD)
+                break;
+        }
+        pi = page.pg_index + (1<<page.compound_order);
+        del_page_from_free_area(&page, &free_area[page.compound_order]);
+        expand_reserve(&page, ps, pe);
+    } while(pi <= pe);
 }
