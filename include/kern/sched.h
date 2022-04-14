@@ -26,12 +26,6 @@ struct task_struct {
     void (*cb)(void*);
 };
 
-
-struct task_struct *current;
-struct task_struct *task_queue_head;
-
-struct task_struct task_pool[MAX_TASK_NUM];
-
 void task_queue_init();
 void task_create(void (*cb)(void*), void *args, int prio);
 void task_run();

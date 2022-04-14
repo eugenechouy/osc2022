@@ -3,7 +3,7 @@
 
 #include "list.h"
 
-#define MEM_LIMIT 0x3C000000
+#define MEM_LIMIT 0x3B400000
 
 struct free_area {
     struct list_head free_list;

@@ -1,6 +1,12 @@
 #include "kern/sched.h"
 #include "kern/irq.h"
 
+struct task_struct *current;
+struct task_struct *task_queue_head;
+
+struct task_struct task_pool[MAX_TASK_NUM];
+
+
 extern void switch_to(struct task_struct *prev, struct task_struct *next);
 
 void context_switch(struct task_struct *next) {

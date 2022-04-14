@@ -3,6 +3,9 @@
 #include "simple_alloc.h"
 #include "string.h"
 
+struct timer_queue *timer_head;
+struct timer_queue *timer_tail;
+
 unsigned long get_current_time() {
     unsigned long cntpct;
     unsigned long cntfrq;
