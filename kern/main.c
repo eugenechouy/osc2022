@@ -35,6 +35,8 @@ void rootfs_init() {
     }
     if (fdt_traverse(initramfs_callback) < 0)
         kputs("dtb: Unknown token\n");
+    if (fdt_traverse(mm_callback) < 0)
+        kputs("dtb: Unknown token\n");
     kputs("dtb: init success\n");
 }
 

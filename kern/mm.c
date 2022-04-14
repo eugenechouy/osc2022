@@ -30,8 +30,33 @@ memory layout
 
 #include "kern/mm.h"
 #include "kern/kio.h"
+#include "simple_alloc.h"
 
-struct free_area free_area[MAX_ORDER];
+#include "string.h"
+#include "byteswap.h"
+
+unsigned int phy_address_start = 0;
+unsigned int phy_address_limit = 0x3C000000;
+
+void mm_callback(char *node_name, char *prop_name, void *prop_value) {
+    if (!strncmp(node_name, "memory", 6) && !strncmp(prop_name, "reg", 3)) {
+        kputs("mm: Find!\n");
+        phy_address_start = __bswap_32(*((unsigned int *)(prop_value)));
+        phy_address_limit = __bswap_32(*((unsigned int *)(prop_value+4)));
+        kputn(phy_address_start, 16);
+        kputs("\n");
+        kputn(phy_address_limit, 16);
+        kputs("\n");
+    }
+}
+
+struct free_area *free_area;
+struct page *frames;
+
+void buddy_alloc_ds() {
+    frames = (struct page *)simple_malloc(sizeof(struct page) * PHY_FRAMES_NUM);
+    free_area = (struct free_area *)simple_malloc(sizeof(struct free_area) * MAX_ORDER);
+}
 
 void printpg(struct page *page) {
     kputn(page->pg_index, 10);
@@ -155,9 +180,12 @@ void mm_init() {
     int order = MAX_ORDER - 1;
 
     int kernel_data_end   = __heap_start / PAGE_SIZE;
-    int mem_end           = MEM_LIMIT / PAGE_SIZE;
+    int mem_end           = phy_address_limit / PAGE_SIZE - 10;
 
-    for (i=0 ; i<MAX_ORDER ; i++) {
+    buddy_alloc_ds();
+
+    i = phy_address_start / PAGE_SIZE;
+    for ( ; i<MAX_ORDER ; i++) {
         INIT_LIST_HEAD(&free_area[i].free_list);
         free_area[i].nr_free = 0;
     }

@@ -1,5 +1,6 @@
 #include "kern/timer.h"
 #include "kern/kio.h"
+#include "reset.h"
 
 void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
     unsigned int svc_num; 
@@ -26,7 +27,8 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
         kputs("svc 4\n");
         break;
     default:
-        uart_sync_puts("Undefined svc number, panic\n");
+        uart_sync_puts("Undefined svc number, about to reboot\n");
+        reset(1000);
         while(1);
     }
 }

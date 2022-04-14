@@ -1,19 +1,16 @@
 #include "kern/mm.h"
 #include "kern/kio.h"
+#include "simple_alloc.h"
 
 #define PREALLOC_SIZE 100
 
 /*
     slab_t
 */
-struct slab_t prealloc_slab[PREALLOC_SIZE];
-
-int prealloc_cnt = 0;
-
 struct slab_t* pmalloc_slab() {
-    if (prealloc_cnt == PREALLOC_SIZE) 
-        return 0;
-    return &prealloc_slab[prealloc_cnt++];
+    struct slab_t *ret;
+    ret = (struct slab_t *)simple_malloc(sizeof(struct slab_t));
+    return ret;
 }
 
 void printslab(struct slab_t* slab) {
@@ -25,7 +22,11 @@ void printslab(struct slab_t* slab) {
 }
 
 
-struct kmem_pool kmalloc_pools[MAX_OBJ_CACHE_NUM];
+struct kmem_pool *kmalloc_pools;
+
+void slab_alloc_ds() {
+    kmalloc_pools = (struct kmem_pool *)simple_malloc(sizeof(struct kmem_pool) * MAX_OBJ_CACHE_NUM);
+}
 
 struct kmem_pool* kmalloc_slab(unsigned int size) {
     unsigned int rounded_size;
@@ -158,6 +159,9 @@ void kfree(void *addr) {
 
 void slab_init() {
     int i;
+
+    slab_alloc_ds();
+
     for (i=0 ; i<MAX_OBJ_CACHE_NUM ; i++) {
         INIT_LIST_HEAD(&kmalloc_pools[i].slab_list);
         if (i < 16) {
