@@ -26,10 +26,9 @@ void dummpy_task1() {
     int cnt = 5;
     while(time--) asm volatile("nop");
     task_create(dummpy_task2, 0, 5);
-    kputs("\n");
     while(cnt--) {
-        time = TIME;
         while(time--) asm volatile("nop");
+        time = TIME;
     }
     kputs("dummy task low end\n");
 }

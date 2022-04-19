@@ -131,8 +131,10 @@ void uart_sync_puts(char *s) {
 
 void uart_sync_printNum(long num, int base) {
     char buffer[64];
-    itoa(num, buffer, base);
-    uart_sync_puts(buffer);
+    if (itoa(num, buffer, base) == -1)
+        uart_sync_puts("@");
+    else
+        uart_sync_puts(buffer);
 }
 
 /* async */
@@ -165,15 +167,6 @@ void uart_async_puts(char *s) {
         uart_async_write_buffer(*s++);
     }
     ENABLE_TX_INT;
-}
-
-void uart_async_printNum(long num, int base) {
-    char buffer[64];
-    if (itoa(num, buffer, base) == -1) {
-        uart_async_puts("Error");
-        return;
-    }
-    uart_async_puts(buffer);
 }
 
 void uart_write_flush() {

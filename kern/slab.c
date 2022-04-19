@@ -13,14 +13,6 @@ struct slab_t* pmalloc_slab() {
     return ret;
 }
 
-void printslab(struct slab_t* slab) {
-    kputs("New slab: ");
-    kputn((long)slab->head_addr, 16);
-    kputs(", ");
-    kputn(slab->nr_free, 10);
-    kputs("\n");
-}
-
 
 struct kmem_pool *kmalloc_pools;
 
@@ -68,7 +60,7 @@ struct slab_t* slab_create(struct kmem_pool *pool) {
 
     page->slab = slab;
 
-    printslab(slab);
+    kprintf("New slab: %x, %d\n", (long)slab->head_addr, slab->nr_free);
 
     return slab;
 }

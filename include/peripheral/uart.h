@@ -16,7 +16,6 @@ void uart_sync_printNum(long num, int base);
 char uart_async_read();
 void uart_async_write(unsigned int c);
 void uart_async_puts(char *s);
-void uart_async_printNum(long num, int base);
 
 void uart_flush();
 void uart_write_flush();

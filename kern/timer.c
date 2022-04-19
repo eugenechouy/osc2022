@@ -21,9 +21,7 @@ void set_expired(unsigned int seconds) {
 }
 
 void timer_el0_handler() {
-    kputs("Seconds after booting: ");
-    kputn(get_current_time(), 10);
-    kputs("\n");
+    kprintf("Seconds after booting: %d\n", get_current_time());
     set_expired(2);
     timer_enable_int();
 }
@@ -104,14 +102,8 @@ void add_timer(void (*callback)(char *, unsigned long), char *message, unsigned 
 }
 
 void timer_callback(char *msg, unsigned long register_time) {
-    kputs("\nSeconds after booting: ");
-    kputn(get_current_time(), 10);
-    kputs("\n");
-	kputs(msg);
-    kputs(", ");
-    kputs("Register at: ");
-    kputn(register_time, 10);
-    kputs("\n");
+    kprintf("\nSeconds after booting: %d\n", get_current_time());
+    kprintf("%s, register at: %d\n", msg, register_time);
 }
 
 void set_timeout(char *args) {
@@ -133,8 +125,6 @@ void set_timeout(char *args) {
         kputs("setTimeout: time error\n");
         return;
     }
-    kputs("Timeout: ");
-    kputn(duration, 10);
-    kputs("s\n");
+    kprintf("Timeout: %ds\n", duration);
     add_timer(timer_callback, args, duration);
 }

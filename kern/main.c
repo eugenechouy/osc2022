@@ -12,20 +12,11 @@
 void hw_info() {
     unsigned int result[2];
     kputs("##########################################\n");
-    
     get_board_revision(result);
-    kputs("Board revision:\t\t\t0x");
-    kputn(result[0], 16);
-    kputs("\n");
-
+    kprintf("Board revision:\t\t\t0x%x\n", result[0]);
     get_ARM_memory(result);
-    kputs("ARM memory base address:\t0x");
-    kputn(result[0], 16);
-    kputs("\n");
-    kputs("ARM memory size:\t\t0x");
-    kputn(result[1], 16);
-    kputs("\n");
-    
+    kprintf("ARM memory base address:\t0x%x\n", result[0]);
+    kprintf("ARM memory size:\t\t0x%x\n", result[1]);
     kputs("##########################################\n");
 }
 
@@ -41,22 +32,6 @@ void rootfs_init() {
     kputs("dtb: init success\n");
 }
 
-void kmalloc_test() {
-    void *addr = kmalloc(19);
-    kputn((long)addr, 16);
-    kputs("\n");
-
-    kfree(addr);
-
-    void *addr2 = kmalloc(20);
-    kputn((long)addr2, 16);
-    kputs("\n");
-
-    addr = kmalloc(8142);
-    kputn((long)addr, 16);
-    kputs("\n");
-}
-
 extern unsigned int __stack_kernel_top;
 
 void reserve_memory() {
@@ -70,13 +45,12 @@ void reserve_memory() {
     mm_reserve((void *)&__stack_kernel_top - 0x100000, (void *)&__stack_kernel_top);
 }
 
-
 void kern_main() { 
     kio_init();
     timer_init();
     task_queue_init();
     int_enable();
-    
+
     kputs("press any key to continue...");
     kscanc();
     rootfs_init();
@@ -84,8 +58,6 @@ void kern_main() {
 
     mm_init();
     reserve_memory();
-    
-    kmalloc_test();
 
     shell_start();
 }

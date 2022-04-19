@@ -8,16 +8,12 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
     svc_num = esr & 0xFFFFFF;
     switch(svc_num) {
     case 0:
-        kputs("\nspsr_el1: \t");
-        kputn(spsr, 16);
-        kputs("\nelr_el1: \t");
-        kputn(elr, 16);
-        kputs("\nesr_el1: \t");
-        kputn(esr, 16);
         /*
         bits [31:26] 0b010101 SVC instruction execution in AArch64 state.
         */
-        kputs("\n");
+        kprintf("\nspsr_el1: \t%x\n", spsr);
+        kprintf("elr_el1: \t%x\n", elr);
+        kprintf("esr_el1: \t%x\n", esr);
         break;
     case 1:
         kputs("svc 1\n");
@@ -27,7 +23,7 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
         kputs("svc 4\n");
         break;
     default:
-        uart_sync_puts("Undefined svc number, about to reboot\n");
+        uart_sync_puts("Undefined svc number, about to reboot...\n");
         reset(1000);
         while(1);
     }

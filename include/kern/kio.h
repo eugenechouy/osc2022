@@ -19,10 +19,6 @@ static inline void kputs(char *s)
     uart_async_puts(s);
 }
 
-static inline void kputn(long num, int base) {
-    uart_async_printNum(num, base);
-}
-
 static inline void kflush() {
     uart_write_flush();
 }

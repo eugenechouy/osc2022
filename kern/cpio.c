@@ -31,8 +31,7 @@ void cpio_ls() {
         i += sizeof(struct cpio_newc_header);
         if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10))
             break;
-        kputs((char *)(CPIO_ADDRESS + i));
-        kputs("\n");
+        kprintf("%s\n", (char *)(CPIO_ADDRESS + i));
     }
 }
 
@@ -52,8 +51,7 @@ void cpio_cat(const char *filename) {
         namesize = ((atoi(header->c_namesize, 16, 8) + 6 + 3) & -4) - 6;
         i += sizeof(struct cpio_newc_header);
         if (!strcmp((char *)(CPIO_ADDRESS + i), filename)) {
-            kputs((char *)(CPIO_ADDRESS + i + namesize));
-            kputs("\n");
+            kprintf("%s\n", (char *)(CPIO_ADDRESS + i + namesize));
             return;
         }
         if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10))

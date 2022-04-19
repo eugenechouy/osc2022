@@ -43,10 +43,8 @@ void mm_callback(char *node_name, char *prop_name, void *prop_value) {
         kputs("mm: Find!\n");
         phy_address_start = __bswap_32(*((unsigned int *)(prop_value)));
         phy_address_limit = __bswap_32(*((unsigned int *)(prop_value+4)));
-        kputn(phy_address_start, 16);
-        kputs("\n");
-        kputn(phy_address_limit, 16);
-        kputs("\n");
+        kprintf("physical start address: 0x%x\n", phy_address_start);
+        kprintf("physical address limit: 0x%x\n", phy_address_limit);
     }
 }
 
@@ -56,16 +54,6 @@ struct page *frames;
 void buddy_alloc_ds() {
     frames = (struct page *)sumalloc(sizeof(struct page) * PHY_FRAMES_NUM);
     free_area = (struct free_area *)sumalloc(sizeof(struct free_area) * MAX_ORDER);
-}
-
-void printpg(struct page *page) {
-    kputs("alloc buddy: ");
-    kputn(page->pg_index, 10);
-    kputs(", ");
-    kputn(page->pg_index*PAGE_SIZE, 16);
-    kputs(", ");
-    kputn(page->compound_order, 10);
-    kputs("\n");
 }
 
 void add_to_free_area(struct page *page, struct free_area *free_area) {
@@ -82,12 +70,7 @@ struct page* expand(struct page *page, unsigned int order) {
     struct page *redundant;
     unsigned int porder = page->compound_order;
 
-    kputs("Release "); 
-    kputn(porder, 10);
-    kputs(", ask for "); 
-    kputn(order, 10);
-    kputs("\n");
-
+    kprintf("Release %d, ask for, %d\n", porder, order);
     if (porder > order) {
         porder--;
         redundant = page + (1 << porder);
@@ -117,9 +100,10 @@ struct page* alloc_pages(unsigned int order) {
     for (int i=order ; i<MAX_ORDER ; i++) {
         if (free_area[i].nr_free > 0) {
             page = rmqueue(&free_area[i], order);
-            printpg(page);
-            if (page)
+            if (page) {
+                kprintf("Alloc new buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
                 return page;
+            }
         }
     }
     return 0;
@@ -140,9 +124,7 @@ void free_pages(struct page *page) {
     struct page *buddy;
     int order = page->compound_order;
 
-    kputs("Free: ");
-    printpg(page);
-
+    kprintf("Free buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
     while(order < MAX_ORDER) {
         buddy = find_buddy(page);
         if (!buddy || buddy->flags != PG_HEAD || buddy->compound_order != order) {
@@ -150,13 +132,8 @@ void free_pages(struct page *page) {
             add_to_free_area(page, &free_area[order]);
             break;
         }
-        kputs("Buddy: ");
-        printpg(buddy);
-        kputs("Merge: ");
-        kputn(order, 10);
-        kputs(" to ");
-        kputn(order+1, 10);
-        kputs("\n");
+        kprintf("\tBuddy page: %d, %x, %d\n", buddy->pg_index, buddy->pg_index*PAGE_SIZE, buddy->compound_order);
+        kprintf("\tMerge %d to %d\n", order, order+1);
 
         // order == buddy->compound_order
         del_page_from_free_area(buddy, &free_area[order]);
@@ -242,11 +219,7 @@ void expand_reserve(struct page *page, unsigned int l, unsigned int r) {
     }
     // no need to split
     if (cl >= l && cr <= r) {
-        kputs("Reserved range: ");
-        kputn(cl, 10);
-        kputs("-");
-        kputn(cr, 10);
-        kputs("\n");
+        kprintf("\tReserved range: %d-%d\n", cl, cr);
         page->flags = PG_USED;
         return;
     }
@@ -269,11 +242,7 @@ void mm_reserve(void *start, void *end) {
     struct page page;   
     int i;
 
-    kputs("Reserve ");
-    kputn(ps, 10); kputs(" to ");kputn(pe, 10); kputs("(");
-    kputn((long)start, 16); kputs(" to ");kputn((long)end, 16);
-    kputs(")\n");
-
+    kprintf("Reserve %d-%d (%d-%d)\n", ps, pe, (long)start, (long)end);
     for (i=ps ; i<=pe ; i++) if (frames[i].flags == PG_USED) {
         kputs("Try to reserved page that are already been used...\n");
         return;
