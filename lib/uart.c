@@ -69,7 +69,7 @@ void uart_disable_int() {
 }
 
 
-void uart_handler() {
+void uart_int_handler() {
     char r;
     int tx = *AUX_MU_IIR & 0b10;
     int rx = *AUX_MU_IIR & 0b100;

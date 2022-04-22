@@ -45,11 +45,19 @@ void reserve_memory() {
     mm_reserve((void *)&__stack_kernel_top - 0x100000, (void *)&__stack_kernel_top);
 }
 
+void idle_task() {
+    while(1) {
+        schedule();
+    }
+}
+
 void kern_main() { 
     kio_init();
-    timer_init();
-    task_queue_init();
-    int_enable();
+    runqueue_init();
+    task_init();
+    int_init();
+    core_timer_enable();
+    timer_sched_latency();
 
     kputs("press any key to continue...");
     kscanc();
@@ -59,5 +67,6 @@ void kern_main() {
     mm_init();
     reserve_memory();
 
-    shell_start();
+    privilege_task_create(shell_start, 10);
+    idle_task();
 }

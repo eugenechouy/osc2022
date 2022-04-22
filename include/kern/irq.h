@@ -4,4 +4,6 @@
 void int_enable();
 void int_disable();
 
+void int_init();
+
 #endif

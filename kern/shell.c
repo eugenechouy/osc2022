@@ -99,8 +99,9 @@ void shell_parse(char *cmd) {
 }
 
 void shell_start() {
-    char *cmd;
-    cmd = kmalloc(128);
+    // char *cmd;
+    // cmd = kmalloc(128);
+    char cmd[128];
     while (1) {
         kputs("raspi3> ");
         shell_input(cmd);

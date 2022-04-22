@@ -1,15 +1,36 @@
 # My OSC 2022
 
-## Author
+Self-made operating system kernel running on Raspberry Pi 3 Model B+.
 
-| 學號 | GitHub 帳號 | 姓名 | Email |
-| --- | ----------- | --- | --- |
-|`310551061`| `eugenechouy` | `周益全` | eugene668822@gmail.com |
+## Requirement
 
-Self-made operating system kernel running on Raspberry Pi 3 Model B+
+* gcc-aarch64-linux-gnu
+* qemu-system-aarch64
 
 ## To Run
 
+Create initramfs first.
+``` bash
+$ cd rootfs
+$ make
+$ make archv
 ```
+
+### Emulator
+
+Run kernel directly.
+``` bash
 $ make run
+```
+
+Or you can start from bootloader, then send the kernel image to bootloader.
+``` bash
+$ cd boot
+$ make
+$ make pty
+...
+# open another shell
+$ make
+$ python3 sendimg.py kernel8.img /dev/pts/1
+$ screen /dev/pts/1 115200
 ```

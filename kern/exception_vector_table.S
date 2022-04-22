@@ -111,6 +111,7 @@ irq_el1_handler:
     save_all
     mov x0, 1
     bl irq_main
+    bl irq_resched
     load_all
     eret    
 

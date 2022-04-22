@@ -5,7 +5,7 @@ void uart_init();
 
 void uart_enable_int();
 void uart_disable_int();
-void uart_handler();
+void uart_int_handler();
 
 char uart_sync_read();
 char uart_sync_read_raw();

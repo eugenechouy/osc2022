@@ -1,10 +1,29 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#include "list.h"
+#include "bitmap.h"
+
 #define MAX_TASK_NUM 64
 
 enum task_state {
     RUNNING, READY, WAITING, INT, DEAD
+};
+
+struct task_context {
+    long x19;
+    long x20;
+    long x21;
+    long x22;
+    long x23;
+    long x24;
+    long x25;
+    long x26;
+    long x27;
+    long x28;
+    long fp;
+    long lr;
+    long sp;
 };
 
 struct task_struct {
@@ -17,18 +36,42 @@ struct task_struct {
     int                 prio;
 
     int                 ctime;
+    int                 resched;
 
-    int                 preemptible;
+    struct task_context task_context;
 
     struct task_struct *next;
 
     void *cb_args;
     void (*cb)(void*);
+
+    struct list_head list;
 };
 
 void task_queue_init();
 void task_create(void (*cb)(void*), void *args, int prio);
 void task_run();
 void task_state_update();
+
+
+#define MAX_PRIO 128
+
+static inline int sched_find_first_bit(const unsigned long *b) {
+    if (b[0])
+        return __ffs(b[0]);
+    if (b[1])
+        return __ffs(b[1]) + 64;
+    return 128;
+}
+
+void task_init();
+void runqueue_init();
+int privilege_task_create(void (*func)(), int prio);
+
+void schedule();
+
+void switch_to(struct task_context *prev, struct task_context *next);
+void update_current(struct task_struct *task);
+struct task_struct* get_current();
 
 #endif 

@@ -20,6 +20,6 @@ extern void core_timer_enable();
 extern void core_timer_disable();
 extern void timer_enable_int();
 extern void timer_disable_int();
-
+extern void timer_sched_latency();
 
 #endif
