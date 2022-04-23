@@ -40,19 +40,11 @@ struct task_struct {
 
     struct task_context task_context;
 
-    struct task_struct *next;
-
     void *cb_args;
     void (*cb)(void*);
 
     struct list_head list;
 };
-
-void task_queue_init();
-void task_create(void (*cb)(void*), void *args, int prio);
-void task_run();
-void task_state_update();
-
 
 #define MAX_PRIO 128
 

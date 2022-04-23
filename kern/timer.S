@@ -39,6 +39,6 @@ timer_disable_int:
 .global timer_sched_latency
 timer_sched_latency: 
     mrs x0, cntfrq_el0
-    asr x0, x0, 1 // 1/2 secs
+    asr x0, x0, 7 // 1/2 secs
     msr cntp_tval_el0, x0
     ret

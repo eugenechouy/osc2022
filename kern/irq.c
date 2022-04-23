@@ -23,31 +23,6 @@ void int_disable() {
     asm volatile("msr DAIFSet, 0xf");
 }
 
-// void irq_main(int el_from) {
-//     int_disable();
-//     task_state_update();
-
-//     if (*CORE0_IRQ_SRC & (1 << CNTPNSIRQ_INT)) { // Timer interrupt
-//         timer_disable_int();
-//         if (el_from == 0) 
-//             task_create(timer_el0_handler, 0, 0);
-//         else if (el_from == 1) 
-//             task_create(timer_el1_handler, 0, 0);
-//         else 
-//             task_create(timer_unknown_handler, 0, 0);
-//     } else if (*CORE0_IRQ_SRC & (1 << GPU_INT)) { // GPU interrupt
-//         if (*IRQ_PENDING_1 & AUX_INT) {   
-//             uart_disable_int(); 
-//             task_create(uart_handler, 0, 1);
-//         }
-//     }
-//     int_enable();
-//     task_run();
-//     uart_write_flush();
-// }
-
-
-
 void timer_int_handler() {
     struct task_struct *current = get_current();
     if (--current->ctime <= 0) {
@@ -79,13 +54,13 @@ void irq_router() {
     softirq_run();
 }
 
-void irq_main() {
+void irq_main(int el_from) {
     register char *sp;
     asm volatile("mov %0, sp": "=r"(sp));
     if (!(sp <= &int_stack[4095] && sp >= &int_stack[0])) {
         asm volatile("mov sp, %0" : : "r"(&int_stack[4080]));
     }
-
+    
     irq_router();
     
     if (!(sp <= &int_stack[4095] && sp >= &int_stack[0])) {

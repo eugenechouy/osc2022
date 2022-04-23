@@ -7,32 +7,6 @@
 #include "string.h"
 #include "reset.h"
 
-#define TIME 1e7
-
-void dummpy_task2() {
-    kputs("dummy task high start\n");
-    int time = TIME;
-    int cnt = 1;
-    while(cnt--) {
-        while(time--) asm volatile("nop");
-        time = TIME;
-    }
-    kputs("dummy task high end\n");
-}
-
-void dummpy_task1() {
-    kputs("dummy task low start\n");
-    int time = TIME;
-    int cnt = 5;
-    while(time--) asm volatile("nop");
-    task_create(dummpy_task2, 0, 5);
-    while(cnt--) {
-        while(time--) asm volatile("nop");
-        time = TIME;
-    }
-    kputs("dummy task low end\n");
-}
-
 void shell_input(char *cmd) {
     char c;
     unsigned int len = 0;
@@ -89,9 +63,6 @@ void shell_parse(char *cmd) {
     } else if (!strcmp(cmd, "reboot")) {
         kputs("About to reboot...\n");
         reset(1000);
-    } else if (!strcmp(cmd, "test")) {
-        task_create(dummpy_task1, 0, 10);
-        kputs("\n");
     } else {
         kputs(cmd);
         kputs(": command not found\n");
@@ -99,8 +70,6 @@ void shell_parse(char *cmd) {
 }
 
 void shell_start() {
-    // char *cmd;
-    // cmd = kmalloc(128);
     char cmd[128];
     while (1) {
         kputs("raspi3> ");

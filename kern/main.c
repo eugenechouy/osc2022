@@ -41,8 +41,8 @@ void reserve_memory() {
     fdt_reserve();
     // initramfs
     cpio_reserve();
-    // kernel stack 1MB
-    mm_reserve((void *)&__stack_kernel_top - 0x100000, (void *)&__stack_kernel_top);
+    // initial kernel stack: 2 pages
+    mm_reserve((void *)&__stack_kernel_top - 0x2000, (void *)&__stack_kernel_top);
 }
 
 void idle_task() {

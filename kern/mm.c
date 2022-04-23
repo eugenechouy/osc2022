@@ -1,33 +1,3 @@
-/*
-memory layout
-
-+------------------+
-| Arm Peripherals  |
-+------------------+ <- 0x40000000
-| GPU Peripherals  |
-+------------------+ <- 0x3f000000
-|     reserved     |
-+------------------+ <- 0x3C000000
-|   User frame[n]  |
-+------------------+
-|        .         |
-|        .         |
-+------------------+
-|   User frame[0]  |
-+------------------+
-|  Kernel frame[n] |
-+------------------+
-|        .         |
-|        .         |
-+------------------+
-|  Kernel frame[0] |
-+------------------+
-| kernel/user data |
-+------------------+
-| kernel/user text |
-+------------------+ <- kernel_base
-*/
-
 #include "kern/mm.h"
 #include "kern/kio.h"
 #include "startup_alloc.h"
@@ -242,7 +212,7 @@ void mm_reserve(void *start, void *end) {
     struct page page;   
     int i;
 
-    kprintf("Reserve %d-%d (%d-%d)\n", ps, pe, (long)start, (long)end);
+    kprintf("Reserve %d-%d (%x-%x)\n", ps, pe, (long)start, (long)end);
     for (i=ps ; i<=pe ; i++) if (frames[i].flags == PG_USED) {
         kputs("Try to reserved page that are already been used...\n");
         return;

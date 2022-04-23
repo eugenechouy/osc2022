@@ -53,19 +53,18 @@ void uart_init() {
     read_start = read_end = 0;
     write_start = write_end = 0;
 
+    // spec p.12, enable rx interrupt
+    *AUX_MU_IER |= 1;
+
     uart_sync_puts("UART initialized successfully!\n");
 }
 
-void uart_enable_int() {
-    // spec p.12
-    *AUX_MU_IER |= 1;
+inline void uart_enable_int() {
     ENABLE_IRQS_1_AUX;
 }
 
-void uart_disable_int() {
-    *AUX_MU_IER = 0;
+inline void uart_disable_int() {
     DISABLE_IRQS_1_AUX;
-    DISABLE_TX_INT;
 }
 
 
@@ -77,9 +76,11 @@ void uart_int_handler() {
         r = (char)(*AUX_MU_IO);
         read_buffer[read_end] = r;
         read_end = (read_end + 1) % MAX_BUFFER_SIZE;
-    } else if (tx) {
+    }
+    if (tx) {
         while(*AUX_MU_LSR & 0x20) {
             if (write_start == write_end) {
+                DISABLE_TX_INT;
                 break;
             }
             *AUX_MU_IO = write_buffer[write_start];
