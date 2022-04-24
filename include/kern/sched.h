@@ -4,7 +4,8 @@
 #include "list.h"
 #include "bitmap.h"
 
-#define MAX_TASK_NUM 64
+#define MAX_PRIV_TASK_NUM 32
+#define TASK_CTIME        1
 
 enum task_state {
     RUNNING, READY, WAITING, INT, DEAD
@@ -38,10 +39,9 @@ struct task_struct {
     int                 ctime;
     int                 resched;
 
-    struct task_context task_context;
+    void               *stk_addr;         
 
-    void *cb_args;
-    void (*cb)(void*);
+    struct task_context task_context;
 
     struct list_head list;
 };
@@ -59,11 +59,21 @@ static inline int sched_find_first_bit(const unsigned long *b) {
 void task_init();
 void runqueue_init();
 int privilege_task_create(void (*func)(), int prio);
+int task_create(void (*func)(), int prio);
 
 void schedule();
 
 void switch_to(struct task_context *prev, struct task_context *next);
 void update_current(struct task_struct *task);
 struct task_struct* get_current();
+
+
+void idle_task();
+
+void exit();
+
+static inline void thread_create(void (*func)()) {
+    task_create(func, 100);
+}
 
 #endif 

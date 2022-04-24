@@ -22,6 +22,10 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
     case 4:
         kputs("svc 4\n");
         break;
+    case 10:
+        uart_sync_puts("exit failed, about to reboot\n");
+        reset(1000);
+        while(1);
     default:
         uart_sync_puts("Undefined svc number, about to reboot...\n");
         reset(1000);

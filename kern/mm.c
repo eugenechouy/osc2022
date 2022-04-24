@@ -40,7 +40,7 @@ struct page* expand(struct page *page, unsigned int order) {
     struct page *redundant;
     unsigned int porder = page->compound_order;
 
-    kprintf("Release %d, ask for, %d\n", porder, order);
+    // kprintf("Release %d, ask for, %d\n", porder, order);
     if (porder > order) {
         porder--;
         redundant = page + (1 << porder);
@@ -71,7 +71,7 @@ struct page* alloc_pages(unsigned int order) {
         if (free_area[i].nr_free > 0) {
             page = rmqueue(&free_area[i], order);
             if (page) {
-                kprintf("Alloc new buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
+                // kprintf("Alloc new buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
                 return page;
             }
         }
@@ -94,7 +94,7 @@ void free_pages(struct page *page) {
     struct page *buddy;
     int order = page->compound_order;
 
-    kprintf("Free buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
+    // kprintf("Free buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
     while(order < MAX_ORDER) {
         buddy = find_buddy(page);
         if (!buddy || buddy->flags != PG_HEAD || buddy->compound_order != order) {
@@ -102,8 +102,8 @@ void free_pages(struct page *page) {
             add_to_free_area(page, &free_area[order]);
             break;
         }
-        kprintf("\tBuddy page: %d, %x, %d\n", buddy->pg_index, buddy->pg_index*PAGE_SIZE, buddy->compound_order);
-        kprintf("\tMerge %d to %d\n", order, order+1);
+        // kprintf("\tBuddy page: %d, %x, %d\n", buddy->pg_index, buddy->pg_index*PAGE_SIZE, buddy->compound_order);
+        // kprintf("\tMerge %d to %d\n", order, order+1);
 
         // order == buddy->compound_order
         del_page_from_free_area(buddy, &free_area[order]);

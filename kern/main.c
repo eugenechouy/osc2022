@@ -45,10 +45,19 @@ void reserve_memory() {
     mm_reserve((void *)&__stack_kernel_top - 0x2000, (void *)&__stack_kernel_top);
 }
 
-void idle_task() {
-    while(1) {
+void delay(int times) {
+    while(times--) {
+        asm volatile("nop");
+    }
+}
+
+void foo(){
+    for(int i = 0; i < 10; ++i) {
+        kprintf("Thread id: %d %d\n", get_current()->tid, i);
+        delay(1e8);
         schedule();
     }
+    exit();
 }
 
 void kern_main() { 
@@ -66,7 +75,9 @@ void kern_main() {
 
     mm_init();
     reserve_memory();
-
-    privilege_task_create(shell_start, 10);
+    for(int i = 0; i < 10; ++i) { // N should > 2
+        thread_create(foo);
+    }
+    // privilege_task_create(shell_start, 10);
     idle_task();
 }
