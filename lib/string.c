@@ -97,3 +97,11 @@ long atoi(char* str, int base, unsigned int len) {
 	}
 	return num;
 }
+
+void* memcpy (void* dest, const void* src, unsigned int len) {
+	char *d = dest;
+	const char *s = src;
+	while (len--)
+		*d++ = *s++;
+	return dest;
+}

@@ -1,25 +1,26 @@
 #include "peripheral/mailbox.h"
 #include "string.h"
 
-unsigned int mailbox_call(unsigned int* mailbox) {
+unsigned int mailbox_call(unsigned char ch, unsigned int* mailbox) {
     unsigned int message;
     unsigned int data;
 
     // Combine the message address (upper 28 bits) with channel number (lower 4 bits)
-    message = ((unsigned long)mailbox & 0xfffffff0) | (0x8 & 0xf);
+    message = ((unsigned long)mailbox & 0xfffffff0) | (ch & 0xf);
     // Check if Mailbox 0 status register’s full flag is set
     while((*MAILBOX_STATUS & MAILBOX_FULL)) asm volatile("nop"); 
     // write to Mailbox 1 Read/Write register
     *MAILBOX_WRITE = message;
-READ:
-    // Check if Mailbox 0 status register’s empty flag is set
-    while((*MAILBOX_STATUS & MAILBOX_EMPTY)) asm volatile("nop"); 
-    // read from Mailbox 0 Read/Write register
-    data = (unsigned int)(*MAILBOX_READ);
-    // Check if the value is the same as you wrote
-    if (data != message) 
-        goto READ;
-    return mailbox[1];
+    while(1) {
+        // Check if Mailbox 0 status register’s empty flag is set
+        while((*MAILBOX_STATUS & MAILBOX_EMPTY)) asm volatile("nop"); 
+        // read from Mailbox 0 Read/Write register
+        data = (unsigned int)(*MAILBOX_READ);
+        // Check if the value is the same as you wrote
+        if (data == message) 
+            return mailbox[1] == REQUEST_SUCCEED;
+    }
+    return 0;
 }
 
 /*
@@ -47,7 +48,7 @@ void get_board_revision(unsigned int *result){
     mailbox[6] = END_TAG;
 
     // message passing procedure call
-    if (mailbox_call(mailbox) == REQUEST_SUCCEED) {
+    if (mailbox_call(0x8, mailbox)) {
         // it should be 0xa020d3 for rpi3 b+
         result[0] = mailbox[5];
     }
@@ -79,7 +80,7 @@ void get_ARM_memory(unsigned int *result) {
     mailbox[7] = END_TAG;
 
     // message passing procedure call
-    if (mailbox_call(mailbox) == REQUEST_SUCCEED) {
+    if (mailbox_call(0x8, mailbox)) {
         result[0] = mailbox[5];
         result[1] = mailbox[6];
     }

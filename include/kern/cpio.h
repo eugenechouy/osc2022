@@ -28,6 +28,7 @@ void initramfs_callback(char *node_name, char *prop_name, void *prop_value);
 void cpio_ls();
 void cpio_cat(const char *filename);
 void cpio_exec(const char *filename);
+char* cpio_find(const char *filename);
 
 void cpio_reserve();
 

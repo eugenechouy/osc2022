@@ -9,6 +9,7 @@
 #include "dtb.h"
 #include "startup_alloc.h"
 #include "syscall.h"
+#include "string.h"
 
 void hw_info() {
     unsigned int result[2];
@@ -63,6 +64,21 @@ void foo(){
 
 #include "user_lib.h"
 
+void test_mbox(){
+    unsigned int mailbox[7];
+    mailbox[0] = 7 * 4;
+    mailbox[1] = REQUEST_CODE;
+    mailbox[2] = GET_BOARD_REVISION; 
+    mailbox[3] = 4;
+    mailbox[4] = TAG_REQUEST_CODE;
+    mailbox[5] = 0; 
+    mailbox[6] = END_TAG;
+    if (mbox_call(0x8, mailbox)) {
+        // it should be 0xa020d3 for rpi3 b+
+        printf("revision %x\n", mailbox[5]);
+    }
+}
+
 void fork_test() {
     printf("\nFork Test, pid %d\n", getpid());
     int cnt = 1;
@@ -93,10 +109,19 @@ void fork_test() {
     exit(); 
 }
 
+char *user_prog1;
+
 void user_prog() {
-    __exec(fork_test);
+    // __exec(fork_test);
+    // __exec(user_prog1);
 }
 
+void lab5() {
+    user_prog1 = kmalloc(250000);
+    char *user_code = cpio_find("syscall.img");
+    memcpy(user_prog1, user_code, 250000);
+    thread_create(user_prog1);
+}
 
 void idle_task() {
     while(1) {
@@ -110,20 +135,28 @@ void kern_main() {
     task_init();
     int_init();
     core_timer_enable();
+    unsigned long tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
     timer_sched_latency();
 
     kputs("press any key to continue...");
-    kscanc();
+    kprintf("%x\n", cpio_exec);
+    // kscanc();
     rootfs_init();
     hw_info();
 
     mm_init();
     reserve_memory();
+
+    // cpio_exec("syscall.img");
     // for(int i = 0; i < 10; ++i) { // N should > 2
     //     thread_create(foo);
     // }
     // privilege_task_create(shell_start, 10);
-    thread_create(user_prog);
+    // thread_create(fork_test);
+    lab5();
     privilege_task_create(kill_zombies, 10);
     idle_task();
 }

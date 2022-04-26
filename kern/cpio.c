@@ -90,6 +90,33 @@ void cpio_exec(const char *filename) {
     __exec(CPIO_ADDRESS + i);
 }
 
+char* cpio_find(const char *filename) {
+    int i        = 0;
+    int filesize = 0;
+    int namesize = 0;
+    struct cpio_newc_header *header;
+
+    for ( ; ; i+=namesize+filesize) {
+        header = ((struct cpio_newc_header *)(CPIO_ADDRESS + i));
+        if (strncmp(header->c_magic, CPIO_MAGIC, 6)) {
+            kputs("cpio: Bad magic\n");
+            break;
+        }
+        filesize = (atoi(header->c_filesize, 16, 8) + 3) & -4;
+        namesize = ((atoi(header->c_namesize, 16, 8) + 6 + 3) & -4) - 6;
+        i += sizeof(struct cpio_newc_header);
+        if (!strcmp((char *)(CPIO_ADDRESS + i), filename))
+            break;
+        if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10)) {
+            kputs("File not exists...\n");
+            return;
+        }
+    }
+    i += namesize;
+
+    return CPIO_ADDRESS + i;
+}
+
 void cpio_reserve() {
     int i        = 0;
     int filesize = 0;
