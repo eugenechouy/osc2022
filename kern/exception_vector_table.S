@@ -2,7 +2,7 @@
 
 // save general registers to stack
 .macro save_all
-    sub sp, sp, 32 * 9
+    sub sp, sp, 32 * 18
     stp x0, x1, [sp ,16 * 0]
     stp x2, x3, [sp ,16 * 1]
     stp x4, x5, [sp ,16 * 2]
@@ -51,7 +51,7 @@
     ldp x24, x25, [sp ,16 * 12]
     ldp x26, x27, [sp ,16 * 13]
     ldp x28, x29, [sp ,16 * 14]
-    add sp, sp, 32 * 9
+    add sp, sp, 32 * 18
 .endm
 
 .align 11 // vector table should be aligned to 0x800

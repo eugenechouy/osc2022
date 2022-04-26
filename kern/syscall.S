@@ -33,4 +33,3 @@ fork:
 exit:
     mov x8, #6
     svc #80
-    ret

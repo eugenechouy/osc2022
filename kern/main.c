@@ -56,19 +56,14 @@ void foo(){
     for(int i = 0; i < 10; ++i) {
         kprintf("Thread id: %d %d\n", get_current()->tid, i);
         delay(1e8);
-        // schedule();
+        schedule();
     }
-    // exit();
+    exit();
 }
 
 #include "user_lib.h"
 
-void foo2() {
-    printf("%d\n", getpid());
-    exit();
-}
-
-void foo1() {
+void fork_test() {
     printf("\nFork Test, pid %d\n", getpid());
     int cnt = 1;
     int ret = 0;
@@ -95,8 +90,11 @@ void foo1() {
     else {
         printf("parent here, pid %d, child %d\n", getpid(), ret);
     }
+    exit(); 
+}
 
-    exit();
+void user_prog() {
+    __exec(fork_test);
 }
 
 
@@ -119,14 +117,13 @@ void kern_main() {
     rootfs_init();
     hw_info();
 
-
     mm_init();
     reserve_memory();
     // for(int i = 0; i < 10; ++i) { // N should > 2
     //     thread_create(foo);
     // }
     // privilege_task_create(shell_start, 10);
-    thread_create(foo1);
+    thread_create(user_prog);
     privilege_task_create(kill_zombies, 10);
     idle_task();
 }

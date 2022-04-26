@@ -147,13 +147,6 @@ int task_create(void (*func)(), int prio) {
     return new_task->tid;
 }
 
-struct trapframe {
-    long x[31];
-    long sp_el0;
-    long spsr_el1;
-    long elr_el1;
-};
-
 int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
     int i;
     unsigned long stk_addr;
@@ -188,7 +181,8 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
 
     struct trapframe* child_trapframe = (struct trapframe *)child->task_context.sp;
     struct trapframe* parent_trapframe = (struct trapframe *)trapframe;
-    child_trapframe->sp_el0 = stk_addr;
+    offset = pptr - parent_trapframe->sp_el0;
+    child_trapframe->sp_el0 = stk_addr - offset;
     child_trapframe->x[0] = 0;
 
     runqueue_push(child);
@@ -213,7 +207,7 @@ void context_switch(struct task_struct *next) {
 
 void schedule() {
     struct task_struct *next = runqueue_pop();
-    if (next) {
+    if (next != 0) {
         context_switch(next);
     }
 }
@@ -223,12 +217,14 @@ void kill_zombies() {
     struct list_head *itr;
     struct list_head *tmp;
 
-    list_for_each_safe(itr, tmp, &zombie_queue) {
-        to_release = list_entry(itr, struct task_struct, list);
-        kprintf("Kill zombie %d\n", to_release->tid);
-        kfree(to_release->stk_addr);
-        kfree(to_release);
-        list_del(itr);
+    while(1) {
+        list_for_each_safe(itr, tmp, &zombie_queue) {
+            to_release = list_entry(itr, struct task_struct, list);
+            kprintf("Kill zombie %d\n", to_release->tid);
+            kfree(to_release->stk_addr);
+            kfree(to_release);
+            list_del(itr);
+        }
     }
 }
 
@@ -244,7 +240,6 @@ int __getpid() {
 void __exec(void (*func)()) {
     struct task_struct *current = get_current();
     run_el1_to_el0(func, current->stk_addr);
-    while(1);
 }
 
 extern void return_from_fork();
