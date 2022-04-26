@@ -8,6 +8,7 @@
 #include "kern/mm.h"
 #include "dtb.h"
 #include "startup_alloc.h"
+#include "syscall.h"
 
 void hw_info() {
     unsigned int result[2];
@@ -55,9 +56,54 @@ void foo(){
     for(int i = 0; i < 10; ++i) {
         kprintf("Thread id: %d %d\n", get_current()->tid, i);
         delay(1e8);
+        // schedule();
+    }
+    // exit();
+}
+
+#include "user_lib.h"
+
+void foo2() {
+    printf("%d\n", getpid());
+    exit();
+}
+
+void foo1() {
+    printf("\nFork Test, pid %d\n", getpid());
+    int cnt = 1;
+    int ret = 0;
+    if ((ret = fork()) == 0) { // child
+        long long cur_sp;
+        asm volatile("mov %0, sp" : "=r"(cur_sp));
+        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
+        ++cnt;
+
+        if ((ret = fork()) != 0){
+            asm volatile("mov %0, sp" : "=r"(cur_sp));
+            printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
+        }
+        else{
+            while (cnt < 5) {
+                asm volatile("mov %0, sp" : "=r"(cur_sp));
+                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
+                delay(1000000);
+                ++cnt;
+            }
+        }
+        exit();
+    }
+    else {
+        printf("parent here, pid %d, child %d\n", getpid(), ret);
+    }
+
+    exit();
+}
+
+
+void idle_task() {
+    while(1) {
         schedule();
     }
-    exit();
 }
 
 void kern_main() { 
@@ -73,11 +119,14 @@ void kern_main() {
     rootfs_init();
     hw_info();
 
+
     mm_init();
     reserve_memory();
-    for(int i = 0; i < 10; ++i) { // N should > 2
-        thread_create(foo);
-    }
+    // for(int i = 0; i < 10; ++i) { // N should > 2
+    //     thread_create(foo);
+    // }
     // privilege_task_create(shell_start, 10);
+    thread_create(foo1);
+    privilege_task_create(kill_zombies, 10);
     idle_task();
 }

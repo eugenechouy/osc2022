@@ -1,6 +1,7 @@
 #include "kern/kio.h"
 #include "kern/mm.h"
 #include "kern/cpio.h"
+#include "kern/sched.h"
 #include "string.h"
 #include "byteswap.h"
 
@@ -86,7 +87,7 @@ void cpio_exec(const char *filename) {
     }
     i += namesize;
 
-    from_el1_to_el0(CPIO_ADDRESS + i);
+    __exec(CPIO_ADDRESS + i);
 }
 
 void cpio_reserve() {

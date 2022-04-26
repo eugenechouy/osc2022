@@ -1,6 +1,7 @@
 #include "kern/sched.h"
 #include "kern/irq.h"
 #include "kern/slab.h"
+#include "kern/kio.h"
 
 
 // ############## runqueue ##################
@@ -105,7 +106,7 @@ int privilege_task_create(void (*func)(), int prio) {
     new_task->resched   = 0;
 
     stk_addr = (unsigned long)&kernel_stack[tid][4095];
-    stk_addr = (stk_addr - 1) & -16; // should be round to 16
+    stk_addr = stk_addr & -16; // should be round to 16
     new_task->task_context.lr = (unsigned long)func;
     new_task->task_context.fp = stk_addr;
     new_task->task_context.sp = stk_addr;
@@ -121,8 +122,7 @@ out:
 int task_create(void (*func)(), int prio) {
     unsigned long stk_addr;
     struct task_struct *new_task;
-    struct task_struct *tmp;
-    tmp = (void*)0x3BFF5000;
+
     if (prio <= 20)
         return -1;
 
@@ -137,7 +137,7 @@ int task_create(void (*func)(), int prio) {
     new_task->resched   = 0;
 
     stk_addr = (unsigned long)kmalloc(4096);
-    stk_addr = (stk_addr - 1) & -16; // should be round to 16
+    stk_addr = stk_addr & -16; // should be round to 16
     new_task->task_context.lr = (unsigned long)func;
     new_task->task_context.fp = stk_addr;
     new_task->task_context.sp = stk_addr;
@@ -145,6 +145,54 @@ int task_create(void (*func)(), int prio) {
 
     runqueue_push(new_task);
     return new_task->tid;
+}
+
+struct trapframe {
+    long x[31];
+    long sp_el0;
+    long spsr_el1;
+    long elr_el1;
+};
+
+int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
+    int i;
+    unsigned long stk_addr;
+    unsigned long offset;
+    char *pptr;
+    char *cptr;
+    struct task_struct *child;
+
+    child = kmalloc(sizeof(struct task_struct));
+    if (!child)
+        return -1;
+    
+    child->tid         = pid++;
+    child->prio        = parent->prio;
+    child->state       = RUNNING;
+    child->ctime       = TASK_CTIME;
+    child->resched     = 0;
+
+    stk_addr = (unsigned long)kmalloc(4096);
+    stk_addr = stk_addr & -16; // should be round to 16
+    child->task_context.lr = (unsigned long)func;
+    child->task_context.fp = stk_addr;
+    
+    cptr = (char *)stk_addr;
+    pptr = (char *)parent->stk_addr;
+    for (i=0 ; i<4096 ; i++) 
+        *(cptr - i) = *(pptr - i); 
+
+    offset = pptr - (char*)trapframe;
+    child->task_context.sp = stk_addr - offset;
+    child->stk_addr        = (void*)stk_addr;
+
+    struct trapframe* child_trapframe = (struct trapframe *)child->task_context.sp;
+    struct trapframe* parent_trapframe = (struct trapframe *)trapframe;
+    child_trapframe->sp_el0 = stk_addr;
+    child_trapframe->x[0] = 0;
+
+    runqueue_push(child);
+    return child->tid;
 }
 
 // #############################################
@@ -165,8 +213,9 @@ void context_switch(struct task_struct *next) {
 
 void schedule() {
     struct task_struct *next = runqueue_pop();
-    if (next)
+    if (next) {
         context_switch(next);
+    }
 }
 
 void kill_zombies() {
@@ -176,23 +225,37 @@ void kill_zombies() {
 
     list_for_each_safe(itr, tmp, &zombie_queue) {
         to_release = list_entry(itr, struct task_struct, list);
+        kprintf("Kill zombie %d\n", to_release->tid);
         kfree(to_release->stk_addr);
         kfree(to_release);
         list_del(itr);
     }
 }
 
-void exit() {
+// ############## sys call ##################
+
+extern void run_el1_to_el0(void *, void *);
+
+int __getpid() {
+    struct task_struct *current = get_current();
+    return current->tid;
+}
+
+void __exec(void (*func)()) {
+    struct task_struct *current = get_current();
+    run_el1_to_el0(func, current->stk_addr);
+    while(1);
+}
+
+extern void return_from_fork();
+
+int __fork(void *trapframe) {
+    struct task_struct *parent = get_current();
+    return task_fork(return_from_fork, parent, trapframe);
+}
+
+void __exit() {
     struct task_struct *current = get_current();
     current->state = DEAD;
     schedule();
-    asm volatile("svc 10");
-}
-
-
-void idle_task() {
-    while(1) {
-        kill_zombies();
-        schedule();
-    }
 }

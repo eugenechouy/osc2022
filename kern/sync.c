@@ -1,8 +1,86 @@
 #include "kern/timer.h"
 #include "kern/kio.h"
+#include "kern/sched.h"
 #include "reset.h"
+#include "syscall.h"
 
-void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
+struct trapframe {
+    long x[31];
+    long sp_el0;
+    long spsr_el1;
+    long elr_el1;
+};
+
+inline void sys_getpid(struct trapframe *trapframe) {
+    long result = __getpid();
+    trapframe->x[0] = result;
+}
+
+inline void sys_uart_read(struct trapframe *trapframe) {
+    int i;
+    int size = trapframe->x[1];
+    char *buf = (char *)trapframe->x[0];
+    for(i=0 ; i<size ; i++)
+        buf[i] = uart_async_read();
+    trapframe->x[0] = i;
+}
+
+inline void sys_uart_write(struct trapframe *trapframe) {
+    int i;
+    char *buf = (char *)trapframe->x[0];
+    int size = trapframe->x[1];
+    // uart_async_puts(buf);
+    for(i=0 ; i<size ; i++)
+        uart_async_write(buf[i]);
+    trapframe->x[0] = trapframe->x[1];
+}
+
+inline void sys_exec(struct trapframe *trapframe) {
+    trapframe->x[0] = 0;   
+}
+
+inline void sys_fork(struct trapframe *trapframe) {
+    int pid = __fork(trapframe);
+    trapframe->x[0] = pid;
+}
+
+inline void sys_exit(struct trapframe *trapframe) {
+    __exit();
+}
+
+void syscall_main(struct trapframe *trapframe) {
+    long syscall_num = trapframe->x[8];
+    switch(syscall_num) {
+        case SYS_GET_PID:
+            sys_getpid(trapframe);
+            break;
+        case SYS_UART_READ:
+            sys_uart_read(trapframe);
+            break;
+        case SYS_UART_WRITE:
+            sys_uart_write(trapframe);
+            break;
+        case SYS_EXEC:
+            sys_exec(trapframe);
+            break;
+        case SYS_FORK:
+            sys_fork(trapframe);
+            break;
+        case SYS_EXIT:
+            sys_exit(trapframe);
+            break;
+        case SYS_MBOX_CALL:
+            break;
+        case SYS_KILL:
+            break;
+        default:
+            uart_sync_puts("Undefined syscall number, about to reboot...\n");
+            reset(1000);
+            while(1);
+    }
+}
+
+void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {
     unsigned int svc_num; 
 
     svc_num = esr & 0xFFFFFF;
@@ -22,10 +100,9 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr) {
     case 4:
         kputs("svc 4\n");
         break;
-    case 10:
-        uart_sync_puts("exit failed, about to reboot\n");
-        reset(1000);
-        while(1);
+    case 80:
+        syscall_main(trapframe);
+        break;
     default:
         uart_sync_puts("Undefined svc number, about to reboot...\n");
         reset(1000);

@@ -62,15 +62,15 @@ int privilege_task_create(void (*func)(), int prio);
 int task_create(void (*func)(), int prio);
 
 void schedule();
+void kill_zombies();
 
 void switch_to(struct task_context *prev, struct task_context *next);
 void update_current(struct task_struct *task);
 struct task_struct* get_current();
 
-
-void idle_task();
-
-void exit();
+int __getpid();
+void __exec(void (*func)());
+void __exit();
 
 static inline void thread_create(void (*func)()) {
     task_create(func, 100);

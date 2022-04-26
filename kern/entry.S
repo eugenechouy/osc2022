@@ -45,3 +45,11 @@ from_el1_to_el0:
     ldr x0, = __stack_user_top
     msr sp_el0, x0
     eret
+
+.global run_el1_to_el0
+run_el1_to_el0:
+    msr elr_el1, x0
+    mov x0, 0b0         // enable interrupt in EL0
+    msr spsr_el1, x0   
+    msr sp_el0, x1
+    eret

@@ -128,7 +128,7 @@ void mm_init() {
     int order = MAX_ORDER - 1;
 
     int kernel_data_end   = (long)(&__heap_start) / PAGE_SIZE;
-    int mem_end           = phy_address_limit / PAGE_SIZE - 10;
+    int mem_end           = phy_address_limit / PAGE_SIZE - 50;
 
     buddy_alloc_ds();
 

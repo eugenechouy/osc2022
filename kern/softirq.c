@@ -9,7 +9,7 @@ struct irq_struct irqueue[SOFTIRQ_NUM];
 
 DECLARE_BITMAP(irqueue_map, SOFTIRQ_NUM);
 
-inline int find_first_bit(const unsigned long *b) {
+static inline int find_first_bit(const unsigned long *b) {
     if (b[0])
         return __ffs(b[0]);
     return 64;
