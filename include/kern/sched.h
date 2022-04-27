@@ -73,6 +73,7 @@ int __getpid();
 void __exec(const char *name, char *const argv[]);
 int __fork(void *trapframe);
 void __exit();
+void __kill(int pid);
 
 void do_exec(void (*func)());
 

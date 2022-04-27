@@ -55,7 +55,7 @@ inline void sys_mbox_call(struct trapframe *trapframe) {
 }
 
 inline void sys_kill(struct trapframe *trapframe) {
-
+    __kill(trapframe->x[0]);
 }
 
 void syscall_main(struct trapframe *trapframe) {

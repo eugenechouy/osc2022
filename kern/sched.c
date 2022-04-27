@@ -196,6 +196,7 @@ void context_switch(struct task_struct *next) {
     if (prev->state == RUNNING) {
         runqueue_push(prev);
     } else if (prev->state == DEAD) {
+        kprintf("Process %d dead...\n", prev->tid);
         if (prev->tid >= 1000)
             list_add_tail(&prev->list, &zombie_queue);
         else
@@ -262,4 +263,10 @@ void __exit() {
     struct task_struct *current = get_current();
     current->state = DEAD;
     schedule();
+}
+
+void __kill(int pid) {
+    if (pid <= 0)
+        return;
+    task_pool[pid].state = DEAD;
 }
