@@ -3,8 +3,8 @@
 #include "kern/slab.h"
 
 void printf(char *fmt, ...) {
-    char *s = kmalloc(64);
-    char *buffer = kmalloc(64);
+    char s[128];
+    char buffer[64];
     char *dst = s;
     char *p;
 

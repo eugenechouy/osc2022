@@ -112,15 +112,8 @@ void fork_test() {
 char *user_prog1;
 
 void user_prog() {
-    // __exec(fork_test);
-    // __exec(user_prog1);
-}
-
-void lab5() {
-    user_prog1 = kmalloc(250000);
-    char *user_code = cpio_find("syscall.img");
-    memcpy(user_prog1, user_code, 250000);
-    thread_create(user_prog1);
+    // do_exec(fork_test);
+    exec("syscall.img", "");
 }
 
 void idle_task() {
@@ -142,7 +135,6 @@ void kern_main() {
     timer_sched_latency();
 
     kputs("press any key to continue...");
-    kprintf("%x\n", cpio_exec);
     // kscanc();
     rootfs_init();
     hw_info();
@@ -156,7 +148,7 @@ void kern_main() {
     // }
     // privilege_task_create(shell_start, 10);
     // thread_create(fork_test);
-    lab5();
-    privilege_task_create(kill_zombies, 10);
+    privilege_task_create(user_prog, 10);
+    // privilege_task_create(kill_zombies, 10);
     idle_task();
 }

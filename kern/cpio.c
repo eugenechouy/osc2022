@@ -87,7 +87,7 @@ void cpio_exec(const char *filename) {
     }
     i += namesize;
 
-    __exec(CPIO_ADDRESS + i);
+    do_exec(CPIO_ADDRESS + i);
 }
 
 char* cpio_find(const char *filename) {
@@ -109,7 +109,7 @@ char* cpio_find(const char *filename) {
             break;
         if (!strncmp((char *)(CPIO_ADDRESS + i), CPIO_END, 10)) {
             kputs("File not exists...\n");
-            return;
+            return 0;
         }
     }
     i += namesize;

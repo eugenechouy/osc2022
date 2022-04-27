@@ -28,26 +28,28 @@ void buddy_alloc_ds() {
 
 void add_to_free_area(struct page *page, struct free_area *free_area) {
     free_area->nr_free++;
+    // kprintf("------add_to_free_area %d %d %x %d\n", page->pg_index, page->compound_order, free_area, free_area->nr_free);
     list_add_tail(&page->list, &free_area->free_list);
 } 
 
 void del_page_from_free_area(struct page *page, struct free_area *free_area) {
     free_area->nr_free--;
+    // kprintf("------del_page_from_free_area %d %d %x %d\n", page->pg_index, page->compound_order, free_area, free_area->nr_free);
     list_del(&page->list);
 }
 
 struct page* expand(struct page *page, unsigned int order) {
     struct page *redundant;
     unsigned int porder = page->compound_order;
-
-    // kprintf("Release %d, ask for, %d\n", porder, order);
+    
     if (porder > order) {
+        // kprintf("Release %d, ask for, %d\n", porder, order);
         porder--;
         redundant = page + (1 << porder);
         page->compound_order = porder;
         redundant->flags          = PG_HEAD;
         redundant->compound_order = porder;
-        add_to_free_area(redundant, &free_area[porder]);
+        add_to_free_area(redundant, &free_area[redundant->compound_order]);
         return expand(page, order);
     }
     page->flags = PG_USED;
@@ -94,12 +96,13 @@ void free_pages(struct page *page) {
     struct page *buddy;
     int order = page->compound_order;
 
-    // kprintf("Free buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
+    // kprintf("\tFree buddy: %d, %x, %d\n", page->pg_index, page->pg_index*PAGE_SIZE, page->compound_order);
     while(order < MAX_ORDER) {
         buddy = find_buddy(page);
+        // kprintf("\tBuddy page: %d, %x, %d\n", buddy->pg_index, buddy->pg_index*PAGE_SIZE, buddy->compound_order);
         if (!buddy || buddy->flags != PG_HEAD || buddy->compound_order != order) {
             page->flags = PG_HEAD;
-            add_to_free_area(page, &free_area[order]);
+            add_to_free_area(page, &free_area[page->compound_order]);
             break;
         }
         // kprintf("\tBuddy page: %d, %x, %d\n", buddy->pg_index, buddy->pg_index*PAGE_SIZE, buddy->compound_order);
@@ -132,10 +135,11 @@ void mm_init() {
 
     buddy_alloc_ds();
 
-    i = phy_address_start / PAGE_SIZE;
-    for ( ; i<MAX_ORDER ; i++) {
+
+    for (i=0 ; i<MAX_ORDER ; i++) {
         INIT_LIST_HEAD(&free_area[i].free_list);
         free_area[i].nr_free = 0;
+        free_area[i].order = i;
     }
 
     for (i=0 ; i<kernel_data_end ; i++) {

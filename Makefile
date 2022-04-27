@@ -48,6 +48,8 @@ asm: $(IMG)
 debug: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio -S -s
 run: $(IMG)
+	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio
+run-display: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -serial null -serial stdio -initrd initramfs.cpio
 clean:
 	rm -rf $(OUT_DIR) $(ELF) $(IMG)

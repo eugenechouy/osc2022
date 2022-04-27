@@ -8,6 +8,7 @@
 struct free_area {
     struct list_head free_list;
     unsigned int nr_free;
+    unsigned int order;
 };
 
 #define PG_USED 0

@@ -1,5 +1,6 @@
 #include "kern/timer.h"
 #include "kern/kio.h"
+#include "kern/cpio.h"
 #include "kern/sched.h"
 #include "kern/irq.h"
 #include "reset.h"
@@ -33,6 +34,9 @@ inline void sys_uart_write(struct trapframe *trapframe) {
 }
 
 inline void sys_exec(struct trapframe *trapframe) {
+    const char *name = (const char *)trapframe->x[0];
+    char *user_code = cpio_find(name);
+    __exec(user_code, trapframe->x[1]);
     trapframe->x[0] = 0;   
 }
 
