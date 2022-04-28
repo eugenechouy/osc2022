@@ -3,6 +3,7 @@
 
 #include "list.h"
 #include "bitmap.h"
+#include "signal.h"
 
 #define MAX_PRIV_TASK_NUM 50
 #define TASK_CTIME        1
@@ -42,6 +43,8 @@ struct task_struct {
     void               *stk_addr;
     void               *ustk_addr; 
 
+    struct list_head signal_list;
+    struct signal_context_t *signal_context;
     struct task_context task_context;
 
     struct list_head list;

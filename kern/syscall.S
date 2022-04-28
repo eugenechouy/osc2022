@@ -45,3 +45,16 @@ kill:
     mov x8, #7
     svc #0
     ret
+
+.global signal
+signal:
+    mov x8, #8
+    svc #0
+    ret
+
+.global sigkill
+sigkill:
+    mov x8, #9
+    svc #0
+    ret
+

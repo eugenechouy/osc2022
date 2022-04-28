@@ -18,6 +18,5 @@ out:
 }
 
 void reserved_kern_startup() {
-    mm_reserve(heap_start, heap_cur);
-    startup = 0;
+    mm_reserve(heap_start, heap_cur + 8192);
 }

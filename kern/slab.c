@@ -40,7 +40,6 @@ struct kmem_pool* kmalloc_slab(unsigned int size) {
         kmalloc_pools[pool_id].object_size = size;
         kmalloc_pools[pool_id].num         = PAGE_SIZE*4 / size;
     }
-
     return &kmalloc_pools[pool_id];
 }
 
@@ -59,8 +58,6 @@ struct slab_t* slab_create(struct kmem_pool *pool) {
     INIT_LIST_HEAD(&slab->list);
 
     page->slab = slab;
-
-    // kprintf("New slab: %x, %d\n", (long)slab->head_addr, slab->nr_free);
 
     return slab;
 }
@@ -115,7 +112,6 @@ void* kmalloc(unsigned int size) {
     struct page *page;
 
     if (size >= PAGE_SIZE) {
-        // kputs("kmalloc: boddy\n");
         for (i=0 ; i<MAX_ORDER ; i++) {
             if (size <= PAGE_SIZE * (1 << i))
                 break;
@@ -124,27 +120,25 @@ void* kmalloc(unsigned int size) {
         if (!page)
             return 0;
         ret = (void*)PFN_2_PHY(page->pg_index);
+        // kprintf("kmalloc: buddy %x\n", ret);
     } else {
-        // kputs("kmalloc: slab\n");
         ret = __do_kmalloc(size);
+        // kprintf("kmalloc: slab %x\n", ret);
     }
     return ret;
 }
 
 void kfree(void *addr) {
     struct slab_t *slab;
-    int pfn = PHY_2_PFN(addr);
-    struct page page = frames[pfn];
+    struct page *page = get_page_from_addr(addr);
 
-    if (page.flags == PG_SLAB) {
-        // kputs("kfree: slab\n");
-        slab = page.slab;
+    if (page->flags == PG_SLAB) {
+        slab = page->slab;
         list_add_tail((struct list_head*)addr, &slab->free_list);
         slab->inuse--;
         slab->nr_free++;
     } else {
-        // kputs("kfree: buddy\n");
-        free_pages(&page);
+        free_pages(addr);
     }
 }
 

@@ -109,10 +109,21 @@ void fork_test() {
     exit(); 
 }
 
+void sig_handler() {
+    kprintf("my handler\n");
+    return;
+}
+
+void sig_test() {
+    signal(1, sig_handler);
+    sigkill(2, 1);
+    exit();
+}
+
 char *user_prog1;
 
 void user_prog() {
-    // do_exec(fork_test);
+    // do_exec(sig_test);
     exec("syscall.img", "");
 }
 

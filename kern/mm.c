@@ -21,20 +21,25 @@ void mm_callback(char *node_name, char *prop_name, void *prop_value) {
 struct free_area *free_area;
 struct page *frames;
 
+struct page *get_page_from_addr(void *addr) {
+    int pfn = PHY_2_PFN(addr);
+    return &frames[pfn];
+}
+
 void buddy_alloc_ds() {
     frames = (struct page *)sumalloc(sizeof(struct page) * PHY_FRAMES_NUM);
-    free_area = (struct free_area *)sumalloc(sizeof(struct free_area) * MAX_ORDER);
+    free_area = (struct free_area *)sumalloc(sizeof(struct free_area) * (MAX_ORDER+1));
 }
 
 void add_to_free_area(struct page *page, struct free_area *free_area) {
     free_area->nr_free++;
-    // kprintf("------add_to_free_area %d %d %x %d\n", page->pg_index, page->compound_order, free_area, free_area->nr_free);
+    // kprintf("------add_to_free_area %d(%x) %d %x %d\n", page->pg_index, PFN_2_PHY(page->pg_index), page->compound_order, free_area, free_area->nr_free);
     list_add_tail(&page->list, &free_area->free_list);
 } 
 
 void del_page_from_free_area(struct page *page, struct free_area *free_area) {
     free_area->nr_free--;
-    // kprintf("------del_page_from_free_area %d %d %x %d\n", page->pg_index, page->compound_order, free_area, free_area->nr_free);
+    // kprintf("------del_page_from_free_area %d(%x) %d %x %d\n", page->pg_index, PFN_2_PHY(page->pg_index), page->compound_order, free_area, free_area->nr_free);
     list_del(&page->list);
 }
 
@@ -58,11 +63,14 @@ struct page* expand(struct page *page, unsigned int order) {
 
 struct page* rmqueue(struct free_area *free_area, unsigned int order) {
     struct page *hpage;
+    struct list_head *ptr;
     if (list_empty(&free_area->free_list))
         return 0;
-    hpage = list_entry(free_area->free_list.next, struct page, list);
-    del_page_from_free_area(hpage, free_area);
-    return expand(hpage, order);
+    list_for_each(ptr, &free_area->free_list) {
+        hpage = list_entry(ptr, struct page, list);
+        del_page_from_free_area(hpage, free_area);
+        return expand(hpage, order);
+    }
 }
 
 struct page* alloc_pages(unsigned int order) {
@@ -92,7 +100,8 @@ struct page* find_buddy(struct page *page) {
     return &frames[buddy_index];
 }
 
-void free_pages(struct page *page) {
+void free_pages(void *addr) {
+    struct page *page = get_page_from_addr(addr);
     struct page *buddy;
     int order = page->compound_order;
 

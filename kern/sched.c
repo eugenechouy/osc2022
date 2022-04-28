@@ -107,6 +107,7 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
+    INIT_LIST_HEAD(&new_task->signal_list);
 
     stk_addr = (unsigned long)&kernel_stack[tid][4095];
     stk_addr = stk_addr & -16; // should be round to 16
@@ -142,6 +143,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
+    INIT_LIST_HEAD(&new_task->signal_list);
 
     stk_addr = (unsigned long)kmalloc(STACKSIZE);
     stk_addr = stk_addr & -16; // should be round to 16

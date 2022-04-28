@@ -3,6 +3,7 @@
 #include "kern/cpio.h"
 #include "kern/sched.h"
 #include "kern/irq.h"
+#include "kern/signal.h"
 #include "reset.h"
 #include "syscall.h"
 #include "peripheral/mailbox.h"
@@ -58,6 +59,18 @@ inline void sys_kill(struct trapframe *trapframe) {
     __kill(trapframe->x[0]);
 }
 
+inline void sys_signal(struct trapframe *trapframe) {
+    __signal(trapframe->x[0], trapframe->x[1]);
+}
+
+inline void sys_sigkill(struct trapframe *trapframe) {
+    __sigkill(trapframe->x[0], trapframe->x[1], trapframe);
+}
+
+inline void sys_sigreturn(struct trapframe *trapframe) {
+    signal_back(trapframe);
+}
+
 void syscall_main(struct trapframe *trapframe) {
     int_enable();
     long syscall_num = trapframe->x[8];
@@ -86,12 +99,20 @@ void syscall_main(struct trapframe *trapframe) {
         case SYS_KILL:
             sys_kill(trapframe);
             break;
+        case SYS_SIGNAL:
+            sys_signal(trapframe);
+            break;
+        case SYS_SIGKILL:
+            sys_sigkill(trapframe);
+            break;
+        case 10:
+            sys_sigreturn(trapframe);
+            break;
         default:
             uart_sync_puts("Undefined syscall number, about to reboot...\n");
             reset(1000);
             while(1);
     }
-    int_disable();
 }
 
 void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {
