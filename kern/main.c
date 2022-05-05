@@ -118,7 +118,7 @@ void kern_main() {
     mm_init();
     reserve_memory();
 
-    privilege_task_create(user_prog, 10);
+    thread_create(user_prog);
     privilege_task_create(kill_zombies, 10);
     idle_task();
 }

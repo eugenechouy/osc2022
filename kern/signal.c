@@ -41,6 +41,7 @@ void signal_jump(void *trapframe, void (*handler)()) {
 
     current->signal_context = signal_context;
 
+    // return address save in x30 in ARM
     tf->x[30]   = signal_return;
     tf->elr_el1 = handler;
     tf->sp_el0  = signal_context->stk_addr;

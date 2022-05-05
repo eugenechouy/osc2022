@@ -62,6 +62,7 @@ struct task_struct* runqueue_pop() {
 // ############## priv task ##################
 
 struct task_struct task_pool[MAX_PRIV_TASK_NUM];
+struct task_struct *utask[1000];
 int pid; // start from 1000
 
 inline int get_priv_tid() {
@@ -138,6 +139,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     if (!new_task)
         return 0;
 
+    utask[pid-1000]     = new_task;
     new_task->tid       = pid++;
     new_task->prio      = prio;
     new_task->state     = RUNNING;
@@ -165,7 +167,7 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
     unsigned long offset;
     char *pptr;
     char *cptr;
-    struct task_struct *child = privilege_task_create(func, parent->prio);
+    struct task_struct *child = task_create(func, parent->prio);
 
     if (!child)
         return -1;
@@ -258,7 +260,7 @@ struct task_struct* get_task_struct(int pid) {
     if (pid < 1000)
         return &task_pool[pid];
     else {
-        return 0;
+        return utask[pid-1000];
     }
 }
 
@@ -292,6 +294,6 @@ void __exit() {
 void __kill(int pid) {
     if (pid <= 0)
         return;
-    if (pid < 1000)
-        task_pool[pid].state = DEAD;
+    struct task_struct* target = get_task_struct(pid);
+    target->state = DEAD;
 }
