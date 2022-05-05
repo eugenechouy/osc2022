@@ -44,6 +44,7 @@ struct task_struct {
     void               *ustk_addr; 
 
     struct list_head signal_list;
+    struct list_head signal_pend_list;
     struct signal_context_t *signal_context;
     struct task_context task_context;
 
@@ -71,6 +72,7 @@ void kill_zombies();
 void switch_to(struct task_context *prev, struct task_context *next);
 void update_current(struct task_struct *task);
 struct task_struct* get_current();
+struct task_struct* get_task_struct(int pid);
 
 int __getpid();
 void __exec(const char *name, char *const argv[]);

@@ -84,6 +84,7 @@ void task_init() {
     task_pool[0].used  = 1;
     task_pool[0].prio  = 127;
     task_pool[0].state = RUNNING;
+    INIT_LIST_HEAD(&task_pool[0].signal_pend_list);
     update_current(&task_pool[0]);
     pid = 1000;
 }
@@ -108,6 +109,7 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
     INIT_LIST_HEAD(&new_task->signal_list);
+    INIT_LIST_HEAD(&new_task->signal_pend_list);
 
     stk_addr = (unsigned long)&kernel_stack[tid][4095];
     stk_addr = stk_addr & -16; // should be round to 16
@@ -119,9 +121,7 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     stk_addr = stk_addr & -16; // should be round to 16
     new_task->ustk_addr       = (void*)stk_addr;
     
-    // int_disable();
     runqueue_push(new_task);
-    // int_enable();
     return new_task;
 }
 
@@ -144,6 +144,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
     INIT_LIST_HEAD(&new_task->signal_list);
+    INIT_LIST_HEAD(&new_task->signal_pend_list);
 
     stk_addr = (unsigned long)kmalloc(STACKSIZE);
     stk_addr = stk_addr & -16; // should be round to 16
@@ -188,6 +189,18 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
     child_trapframe->sp_el0 = (unsigned long)child->ustk_addr - offset;
     child_trapframe->x[0] = 0;
     
+    if (list_empty(&parent->signal_list)) 
+        goto out;
+    // signal copy
+    struct list_head *ptr;
+    struct signal_t *signal;
+    struct signal_t *new_signal;
+    list_for_each(ptr, &parent->signal_list) {
+        signal = list_entry(ptr, struct signal_t, list);
+        new_signal = signal_create(signal->num, signal->handler);
+        list_add_tail(&new_signal->list, &child->signal_list);
+    }
+out:
     return child->tid;
 }
 
@@ -204,6 +217,7 @@ void context_switch(struct task_struct *next) {
         else
             prev->used = 0;
     }
+    // kprintf("context switch %d ~ %d\n", prev->tid, next->tid);
     update_current(next);
     switch_to(&prev->task_context, &next->task_context);
 }
@@ -240,6 +254,14 @@ void do_exec(void (*func)()) {
     run_el1_to_el0(func, current->ustk_addr);
 }
 
+struct task_struct* get_task_struct(int pid) {
+    if (pid < 1000)
+        return &task_pool[pid];
+    else {
+        return 0;
+    }
+}
+
 // ############## sys call ##################
 
 int __getpid() {
@@ -270,5 +292,6 @@ void __exit() {
 void __kill(int pid) {
     if (pid <= 0)
         return;
-    task_pool[pid].state = DEAD;
+    if (pid < 1000)
+        task_pool[pid].state = DEAD;
 }

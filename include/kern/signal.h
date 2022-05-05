@@ -11,6 +11,11 @@ struct signal_t {
     struct list_head list;
 };
 
+struct signal_pend_t {
+    int num;
+    struct list_head list;
+};
+
 struct signal_context_t {
     void *trapframe;
     void *stk_addr;
@@ -18,6 +23,7 @@ struct signal_context_t {
 
 struct signal_t *signal_create(int SIGNAL, void (*handler)());
 void signal_back(void *trapframe);
+void signal_run();
 
 void __signal(int SIGNAL, void (*handler)());
 void __sigkill(int pid, int SIGNAL, void *trapframe);

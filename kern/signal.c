@@ -57,24 +57,56 @@ void signal_back(void *trapframe) {
 
 
 void __signal(int SIGNAL, void (*handler)()) {
+    struct list_head *ptr;
+    struct signal_t *signal;
     struct task_struct *current = get_current();
-    struct signal_t *signal = signal_create(SIGNAL, handler);
+
+    if (list_empty(&current->signal_list)) 
+        goto regis;
+    list_for_each(ptr, &current->signal_list) {
+        signal = list_entry(ptr, struct signal_t, list);
+        if (signal->num == SIGNAL) {
+            kprintf("Overwite existing registed signal(%d)\n", SIGNAL);
+            list_del(&signal->list);
+            break;
+        }
+    }
+regis:
+    signal = signal_create(SIGNAL, handler);
     list_add_tail(&signal->list, &current->signal_list);
 }
 
 void __sigkill(int pid, int SIGNAL, void *trapframe) {
+    struct signal_pend_t *signal_pend;
+    struct task_struct *target = get_task_struct(pid);
+    if (list_empty(&target->signal_list)) 
+        goto default_sig;
+
+    signal_pend = kmalloc(sizeof(struct signal_pend_t));
+    signal_pend->num = SIGNAL;
+    INIT_LIST_HEAD(&signal_pend->list);
+
+    list_add_tail(&signal_pend->list, &target->signal_pend_list);
+    return;
+default_sig:
+    signal_default(pid, SIGNAL);
+}
+
+void signal_run(void *trapframe) {
+    struct task_struct *current = get_current();
+    if (list_empty(&current->signal_pend_list)) 
+        return;
+
     struct list_head *ptr;
     struct signal_t *signal;
-    struct task_struct *current = get_current();
-    if (list_empty(&current->signal_list)) 
-        goto out;
+    struct signal_pend_t *signal_pend;    
+    signal_pend = list_entry(current->signal_pend_list.next, struct signal_pend_t, list);
+    list_del(&signal_pend->list);
     list_for_each(ptr, &current->signal_list) {
         signal = list_entry(ptr, struct signal_t, list);
-        if (signal->num == SIGNAL) {
+        if (signal->num == signal_pend->num) {
             signal_jump(trapframe, signal->handler);
             return;
         }
     }
-out:
-    signal_default(pid, SIGNAL);
 }

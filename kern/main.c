@@ -53,31 +53,7 @@ void delay(int times) {
     }
 }
 
-void foo(){
-    for(int i = 0; i < 10; ++i) {
-        kprintf("Thread id: %d %d\n", get_current()->tid, i);
-        delay(1e8);
-        schedule();
-    }
-    exit();
-}
-
 #include "user_lib.h"
-
-void test_mbox(){
-    unsigned int mailbox[7];
-    mailbox[0] = 7 * 4;
-    mailbox[1] = REQUEST_CODE;
-    mailbox[2] = GET_BOARD_REVISION; 
-    mailbox[3] = 4;
-    mailbox[4] = TAG_REQUEST_CODE;
-    mailbox[5] = 0; 
-    mailbox[6] = END_TAG;
-    if (mbox_call(0x8, mailbox)) {
-        // it should be 0xa020d3 for rpi3 b+
-        printf("revision %x\n", mailbox[5]);
-    }
-}
 
 void fork_test() {
     printf("\nFork Test, pid %d\n", getpid());
@@ -109,22 +85,11 @@ void fork_test() {
     exit(); 
 }
 
-void sig_handler() {
-    kprintf("my handler\n");
-    return;
-}
-
-void sig_test() {
-    signal(1, sig_handler);
-    sigkill(2, 1);
-    exit();
-}
-
-char *user_prog1;
+char *user_code;
 
 void user_prog() {
-    // do_exec(sig_test);
-    exec("syscall.img", "");
+    user_code = cpio_find("syscall.img");
+    __exec(user_code, "");
 }
 
 void idle_task() {
@@ -146,20 +111,14 @@ void kern_main() {
     timer_sched_latency();
 
     kputs("press any key to continue...");
-    // kscanc();
+    kscanc();
     rootfs_init();
     hw_info();
 
     mm_init();
     reserve_memory();
 
-    // cpio_exec("syscall.img");
-    // for(int i = 0; i < 10; ++i) { // N should > 2
-    //     thread_create(foo);
-    // }
-    // privilege_task_create(shell_start, 10);
-    // thread_create(fork_test);
     privilege_task_create(user_prog, 10);
-    // privilege_task_create(kill_zombies, 10);
+    privilege_task_create(kill_zombies, 10);
     idle_task();
 }

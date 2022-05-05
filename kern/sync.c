@@ -113,6 +113,7 @@ void syscall_main(struct trapframe *trapframe) {
             reset(1000);
             while(1);
     }
+    int_disable();
 }
 
 void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {

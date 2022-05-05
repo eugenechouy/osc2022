@@ -54,7 +54,7 @@ void irq_router() {
     softirq_run();
 }
 
-void irq_main(int el_from) {
+void irq_main() {
     register char *sp;
     asm volatile("mov %0, sp": "=r"(sp));
     if (!(sp <= &int_stack[4095] && sp >= &int_stack[0])) {

@@ -114,17 +114,19 @@ sync_handler:
 
 irq_el1_handler:
     save_all
-    mov x0, 1
     bl irq_main
     bl irq_resched
+    mov x0, sp
+    bl signal_run
     load_all
     eret    
 
 irq_el0_handler:
     save_all
-    mov x0, 0
     bl irq_main
     bl irq_resched
+    mov x0, sp
+    bl signal_run
     load_all
     eret    
 

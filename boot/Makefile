@@ -49,6 +49,6 @@ debug: $(IMG)
 run: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio 
 pty:
-	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial pty -initrd ../initramfs.cpio -dtb ../raspi3/bcm2710-rpi-3-b-plus.dtb
+	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -serial null -serial pty -initrd ../initramfs.cpio -dtb ../raspi3/bcm2710-rpi-3-b-plus.dtb
 clean:
 	rm -rf $(OUT_DIR) $(ELF) $(IMG)
