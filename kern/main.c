@@ -88,8 +88,10 @@ void fork_test() {
 char *user_code;
 
 void user_prog() {
-    user_code = cpio_find("syscall.img");
-    __exec(user_code, "");
+    // user_code = cpio_find("syscall.img");
+    // __exec(user_code, "");
+    fork_test();
+    do_exec(fork_test);
 }
 
 void idle_task() {
@@ -118,7 +120,8 @@ void kern_main() {
     mm_init();
     reserve_memory();
 
-    thread_create(user_prog);
+    // thread_create(user_prog);
+    privilege_task_create(user_prog, 10);
     privilege_task_create(kill_zombies, 10);
     idle_task();
 }

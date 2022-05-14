@@ -63,14 +63,11 @@ struct page* expand(struct page *page, unsigned int order) {
 
 struct page* rmqueue(struct free_area *free_area, unsigned int order) {
     struct page *hpage;
-    struct list_head *ptr;
     if (list_empty(&free_area->free_list))
         return 0;
-    list_for_each(ptr, &free_area->free_list) {
-        hpage = list_entry(ptr, struct page, list);
-        del_page_from_free_area(hpage, free_area);
-        return expand(hpage, order);
-    }
+    hpage = list_entry(free_area->free_list.next, struct page, list);
+    del_page_from_free_area(hpage, free_area);
+    return expand(hpage, order);
 }
 
 struct page* alloc_pages(unsigned int order) {

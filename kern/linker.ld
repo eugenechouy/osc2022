@@ -1,6 +1,8 @@
 SECTIONS
 {
-  	. = 0x80000;
+	. = 0xffff000000000000;
+  	. += 0x80000;
+	__kernel_start = .;
   	.text : {
     	KEEP(*(.text.entry))
 		*(.text .text.* .gnu.linkonce.t.*)
@@ -25,6 +27,10 @@ SECTIONS
 	}
 
 	. = ALIGN(0x1000);
+	__kernel_pgd = .;
+	.data.kpgd : {
+		. += (515 * 0x1000);
+	}
 
 	__heap_start = .;
 
