@@ -4,17 +4,9 @@
 
 .global _start
 _start:
-    
     bl      from_el2_to_el1
 
 el1_start:
-    // set_exception_vector_table
-    adr x0, exception_vector_table
-    msr vbar_el1, x0
-
-    mov x0, 0b0         // enable interrupt in EL0
-    msr spsr_el1, x0
-
     // Set up TCR_EL1
     ldr x0, =TCR_CONFIG_DEFAULT
     msr tcr_el1, x0 
@@ -29,23 +21,30 @@ el1_start:
     orr x2, x2, #1
     msr sctlr_el1, x2 // enable MMU, cache remains disabled
 
+    // indirect branch
+    ldr x0, =mmu_open
+    br  x0
+
+mmu_open:
     // clear bss
     ldr     x0, =__bss_start
     ldr     x1, =__bss_size
-loop:  
+bss_loop:  
     cbz     x1, ready
     str     xzr, [x0], #8   // [x0] = 0, x0 = x0 + 8
     sub     x1, x1, #1      // x1 = x1 - 1
-    cbnz    x1, loop
+    cbnz    x1, bss_loop
 
 ready:
+    // set_exception_vector_table
+    adr x0, exception_vector_table
+    msr vbar_el1, x0
+
     // change sp to virtual address
     ldr x1, =KERNEL_VA_BASE
     add sp, sp, x1
     
-    // indirect branch
-    ldr x0, =kern_main
-    br  x0
+    bl kern_main
 
 spin: 
     wfe
@@ -60,15 +59,6 @@ from_el2_to_el1:
     msr elr_el2, lr
     ldr x0, = __stack_kernel_top
     msr sp_el1, x0
-    eret
-
-.global from_el1_to_el0
-from_el1_to_el0:
-    msr elr_el1, x0
-    mov x0, 0b0         // enable interrupt in EL0
-    msr spsr_el1, x0   
-    ldr x0, = __stack_user_top
-    msr sp_el0, x0
     eret
 
 .global run_el1_to_el0

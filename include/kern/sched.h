@@ -4,6 +4,7 @@
 #include "list.h"
 #include "bitmap.h"
 #include "signal.h"
+#include "mm_types.h"
 
 #define MAX_PRIV_TASK_NUM 50
 #define TASK_CTIME        1
@@ -48,6 +49,8 @@ struct task_struct {
     struct signal_context_t *signal_context;
     struct task_context task_context;
 
+    struct mm_struct mm;
+
     struct list_head list;
 };
 
@@ -71,6 +74,7 @@ void kill_zombies();
 
 void switch_to(struct task_context *prev, struct task_context *next);
 void update_current(struct task_struct *task);
+void update_pgd(unsigned long pgd);
 struct task_struct* get_current();
 struct task_struct* get_task_struct(int pid);
 

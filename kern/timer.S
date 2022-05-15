@@ -1,6 +1,6 @@
 .section ".text"
 
-#define CORE0_TIMER_IRQ_CTRL 0x40000040
+#include "peripheral/arm.h"
 
 .global core_timer_enable
 core_timer_enable:

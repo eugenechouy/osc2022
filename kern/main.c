@@ -37,14 +37,14 @@ void rootfs_init() {
 extern unsigned int __stack_kernel_top;
 
 void reserve_memory() {
-    // page used by startup allocator
+    kprintf("page used by startup allocator\n");
     reserved_kern_startup();
-    // device tree 
+    kprintf("device tree\n");
     fdt_reserve();
-    // initramfs
+    kprintf("initramfs\n");
     cpio_reserve();
-    // initial kernel stack: 2 pages
-    mm_reserve((void *)&__stack_kernel_top - 0x2000, (void *)&__stack_kernel_top);
+    kprintf("initial kernel stack\n");
+    mm_reserve(PHY_2_VIRT((void *)&__stack_kernel_top - 0x2000), PHY_2_VIRT((void *)&__stack_kernel_top));
 }
 
 void delay(int times) {
@@ -88,10 +88,8 @@ void fork_test() {
 char *user_code;
 
 void user_prog() {
-    // user_code = cpio_find("syscall.img");
-    // __exec(user_code, "");
-    fork_test();
-    do_exec(fork_test);
+    user_code = cpio_find("syscall.img");
+    __exec(user_code, "");
 }
 
 void idle_task() {
@@ -114,14 +112,14 @@ void kern_main() {
 
     kputs("press any key to continue...");
     kscanc();
+    kputs("\n");
     rootfs_init();
     hw_info();
 
     mm_init();
     reserve_memory();
 
-    // thread_create(user_prog);
-    privilege_task_create(user_prog, 10);
-    privilege_task_create(kill_zombies, 10);
+    thread_create(user_prog);
+    // privilege_task_create(kill_zombies, 10);
     idle_task();
 }

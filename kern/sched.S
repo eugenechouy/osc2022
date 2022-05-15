@@ -30,3 +30,12 @@ update_current:
 get_current:
     mrs x0, tpidr_el1   
     ret
+
+.global update_pgd
+update_pgd:
+    dsb ish // ensure write has completed
+    msr ttbr0_el1, x0 // switch translation based address.
+    tlbi vmalle1is // invalidate all TLB entries
+    dsb ish // ensure completion of TLB invalidatation
+    isb // clear pipeline
+    ret

@@ -16,22 +16,24 @@
     Device memory                0b0000dd00
     Normal memory                0booooiiii, (oooo != 0000 and iiii != 0000)
         oooo == 0b0100           Outer Non-cacheable (L2)
-        iiii == 0b0100           Inner Non-cacheable (L2)
+        iiii == 0b0100           Inner Non-cacheable (L1)
 */
 #define MAIR_DEVICE_nGnRnE      0b00000000
 #define MAIR_NORMAL_NOCACHE     0b01000100
 #define MAIR_IDX_DEVICE_nGnRnE  0
 #define MAIR_IDX_NORMAL_NOCACHE 1
-#define MAIR_CONFIG_DEFAULT    ((MAIR_DEVICE_nGnRnE << (MAIR_IDX_DEVICE_nGnRnE * 8)) | (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)))
+#define MAIR_CONFIG_DEFAULT     ((MAIR_DEVICE_nGnRnE << (MAIR_IDX_DEVICE_nGnRnE * 8)) | (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)))
 
 /*
     Page’s Descriptor
 */
 #define PD_TABLE 0b11
 #define PD_BLOCK 0b01
-#define PD_PAGE  0b11
+#define PD_PAGE  0b11 
 
-#define PD_ACCESS (1 << 10)
+#define PD_USER_RW      (0b01 << 6)
+
+#define PD_ACCESS       (1 << 10)
 
 #define PGD0_ATTR        PD_TABLE
 #define PUD0_ATTR        PD_TABLE

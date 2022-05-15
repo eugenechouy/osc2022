@@ -12,6 +12,7 @@ void *DTB_END_ADR = 0;
 
 int fdt_init() {
     asm volatile("MOV %0, x23" :  "=r"(DTB_ADDRESS));
+    DTB_ADDRESS = (void*)PHY_2_VIRT(DTB_ADDRESS);
     if (strncmp((char*)DTB_ADDRESS, FDT_HEADER_MAGIC, 4))
         return -1;
     return 0;

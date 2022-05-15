@@ -199,7 +199,7 @@ void expand_reserve(struct page *page, unsigned int l, unsigned int r) {
     }
     // no need to split
     if (cl >= l && cr <= r) {
-        kprintf("\tReserved range: %d-%d\n", cl, cr);
+        // kprintf("\tReserved range: %d-%d\n", cl, cr);
         page->flags = PG_USED;
         return;
     }
@@ -216,15 +216,15 @@ void expand_reserve(struct page *page, unsigned int l, unsigned int r) {
 
 // Mark the page from start to end as used
 void mm_reserve(void *start, void *end) {
-    unsigned int ps = PHY_2_PFN(start);
-    unsigned int pe = PHY_2_PFN(end);
+    unsigned int ps = PHY_2_PFN(VIRT_2_PHY(start));
+    unsigned int pe = PHY_2_PFN(VIRT_2_PHY(end));
     unsigned int pi = ps;
     struct page page;   
     int i;
 
-    kprintf("Reserve %d-%d (%x-%x)\n", ps, pe, (long)start, (long)end);
+    kprintf("\tReserve 0x%x-0x%x\n", VIRT_2_PHY(start), VIRT_2_PHY(end));
     for (i=ps ; i<=pe ; i++) if (frames[i].flags == PG_USED) {
-        kputs("Try to reserved page that are already been used...\n");
+        kputs("\tTry to reserved page that are already been used...\n");
         return;
     }
 

@@ -1,13 +1,11 @@
 #include "peripheral/aux.h"
 #include "peripheral/uart.h"
 #include "peripheral/interrupt.h"
+#include "peripheral/arm.h"
 #include "kern/timer.h"
 #include "kern/irq.h"
 #include "kern/sched.h"
 #include "kern/softirq.h"
-
-// QA7_rev3.4 p.7
-#define CORE0_IRQ_SRC ((volatile unsigned int*)(0x40000060))
 
 // QA7_rev3.4 p.16
 #define CNTPNSIRQ_INT   1
@@ -69,10 +67,12 @@ void irq_main() {
 }
 
 void irq_resched() {
+    /* haven't finish page table update
     struct task_struct *current = get_current();
     if (current->resched) {
         current->ctime = 1;
         current->resched = 0;
         schedule();
     }
+    */
 }

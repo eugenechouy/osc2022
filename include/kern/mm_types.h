@@ -3,6 +3,7 @@
 
 #include "list.h"
 
+#define MEM_TOTAL 0x40000000
 #define MEM_LIMIT 0x3B400000
 
 struct free_area {
@@ -26,15 +27,22 @@ struct page {
     struct list_head list;
 };
 
+struct mm_struct {
+    unsigned long *pgd;
+};
+
+
+#include "kern/page.h"
 
 #define MAX_ORDER 10
 
-#define PAGE_SIZE 4096
-#define PAGE_SHIFT 12
-#define PHY_FRAMES_NUM 262144 // 0x40000000 / 4096
+#define PHY_FRAMES_NUM (MEM_TOTAL / PAGE_SIZE)
 
 #define PFN_2_PHY(pfn) (long)( pfn << PAGE_SHIFT )
 #define PHY_2_PFN(adr) ((long)adr >> PAGE_SHIFT )
 
+// kernel space address translation
+#define VIRT_2_PHY(vaddr) ((long)vaddr & 0x0000ffffffffffff)
+#define PHY_2_VIRT(vaddr) ((long)vaddr | 0xffff000000000000)
 
 #endif

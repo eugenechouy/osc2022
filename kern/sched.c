@@ -109,6 +109,7 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
+    new_task->mm.pgd    = 0;
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
 
@@ -145,6 +146,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
+    new_task->mm.pgd    = 0;
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
 
@@ -272,10 +274,21 @@ int __getpid() {
 }
 
 void __exec(const char *user_code, char *const argv[]) {
+    void *pc;
+    void *stk;
+
     struct task_struct *current = get_current();
     char *user_prog1 = kmalloc(250000);
     memcpy(user_prog1, user_code, 250000);
-    run_el1_to_el0(user_prog1, current->ustk_addr);
+
+    pc  = mappages(&current->mm, 0x0, 250000, VIRT_2_PHY(user_prog1));
+    stk = mappages(&current->mm, 0xffffffffb000, 4096, VIRT_2_PHY(current->ustk_addr));
+    
+    asm volatile("msr sp_el0, %0" : : "r"(0xffffffffc000));
+    asm volatile("msr elr_el1, %0": : "r"(0x0));
+    asm volatile("msr spsr_el1, %0" : : "r"(0b0));
+    update_pgd(current->mm.pgd);
+    asm volatile("eret");
 }
 
 extern void return_from_fork();

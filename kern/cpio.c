@@ -5,13 +5,13 @@
 #include "string.h"
 #include "byteswap.h"
 
-void *CPIO_ADDRESS = (void*)0x8000000;
-void *CPIO_END_ADR = 0;
+// qemu default address
+void *CPIO_ADDRESS = (void*)PHY_2_VIRT(0x8000000);
 
 void initramfs_callback(char *node_name, char *prop_name, void *prop_value) {
     if (!strncmp(node_name, "chosen", 6) && !strncmp(prop_name, "linux,initrd-start", 18)) {
         kputs("cpio: Find!\n");
-        CPIO_ADDRESS = (void*)__bswap_32(*((unsigned int *)(prop_value)));
+        CPIO_ADDRESS = (void*)PHY_2_VIRT(__bswap_32(*((unsigned int *)(prop_value))));
     }
 }
 
@@ -60,8 +60,6 @@ void cpio_cat(const char *filename) {
     }
     kputs("File not exists...\n");
 }
-
-extern void from_el1_to_el0(void *);
 
 void cpio_exec(const char *filename) {
     int i        = 0;
