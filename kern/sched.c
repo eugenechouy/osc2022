@@ -4,6 +4,9 @@
 #include "kern/kio.h"
 #include "string.h"
 
+#define ROUND_UP(n,d)   (((n) + (d-1)) & (-d))
+#define ROUND_DOWN(n,d) ((n) & (-d))
+
 // ############## runqueue ##################
 
 struct prio_array {
@@ -15,8 +18,6 @@ struct runqueue {
     unsigned long nr_running;
     struct prio_array array;
 };
-
-#define STACKSIZE 4096
 
 struct runqueue runqueue;
 struct list_head zombie_queue;
@@ -74,8 +75,12 @@ inline int get_priv_tid() {
     return -1;
 }
 
+extern unsigned int __kernel_pgd;
+
 void task_init() {
     int i;
+    memset(task_pool, 0, sizeof(struct task_struct) * MAX_PRIV_TASK_NUM);
+    memset(utask, 0, sizeof(struct task_struct) * 1000);
     for(i=0 ; i<MAX_PRIV_TASK_NUM ; i++) {
         task_pool[i].tid    = i;
         task_pool[i].used   = 0;
@@ -85,6 +90,7 @@ void task_init() {
     task_pool[0].used  = 1;
     task_pool[0].prio  = 127;
     task_pool[0].state = RUNNING;
+    task_pool[0].mm.pgd = (unsigned long *)&__kernel_pgd;
     INIT_LIST_HEAD(&task_pool[0].signal_pend_list);
     update_current(&task_pool[0]);
     pid = 1000;
@@ -109,19 +115,17 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
-    new_task->mm.pgd    = 0;
+    create_pgd(&new_task->mm);
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
 
+    // kernel stack
     stk_addr = (unsigned long)&kernel_stack[tid][4095];
-    stk_addr = stk_addr & -16; // should be round to 16
+    stk_addr = ROUND_DOWN(stk_addr, 16);
     new_task->task_context.lr = (unsigned long)func;
     new_task->task_context.fp = stk_addr;
     new_task->task_context.sp = stk_addr;
     new_task->stk_addr        = (void*)stk_addr;
-    stk_addr = (unsigned long)&user_stack[tid][4095];
-    stk_addr = stk_addr & -16; // should be round to 16
-    new_task->ustk_addr       = (void*)stk_addr;
     
     runqueue_push(new_task);
     return new_task;
@@ -140,27 +144,31 @@ struct task_struct *task_create(void (*func)(), int prio) {
     if (!new_task)
         return 0;
 
+    int_disable();
+
     utask[pid-1000]     = new_task;
     new_task->tid       = pid++;
     new_task->prio      = prio;
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
-    new_task->mm.pgd    = 0;
+    create_pgd(&new_task->mm);
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
 
+    // kernel stack
     stk_addr = (unsigned long)kmalloc(STACKSIZE);
-    stk_addr = stk_addr & -16; // should be round to 16
+    stk_addr = stk_addr + STACKSIZE;
+    stk_addr = ROUND_DOWN(stk_addr, 16);
     new_task->task_context.lr = (unsigned long)func;
     new_task->task_context.fp = stk_addr;
     new_task->task_context.sp = stk_addr;
     new_task->stk_addr        = (void*)stk_addr;
-    stk_addr = (unsigned long)kmalloc(STACKSIZE);
-    stk_addr = stk_addr & -16; // should be round to 16
-    new_task->ustk_addr       = (void*)stk_addr;
 
     runqueue_push(new_task);
+
+    int_enable();
+
     return new_task;
 }
 
@@ -169,10 +177,14 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
     unsigned long offset;
     char *pptr;
     char *cptr;
+    struct trapframe* child_trapframe;
+    struct trapframe* parent_trapframe;
     struct task_struct *child = task_create(func, parent->prio);
 
     if (!child)
         return -1;
+
+    int_disable();
 
     // setup kernel stack
     cptr = (char *)child->stk_addr;
@@ -183,15 +195,14 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
     child->task_context.sp = (unsigned long)child->stk_addr - offset;
 
     // setup user stack
-    cptr = (char *)child->ustk_addr;
-    pptr = (char *)parent->ustk_addr;
-    struct trapframe* child_trapframe = (struct trapframe *)child->task_context.sp;
-    struct trapframe* parent_trapframe = (struct trapframe *)trapframe;
-    offset = pptr - (char *)parent_trapframe->sp_el0;
-    for (i=0 ; i<offset ; i++) 
-        *(cptr - i) = *(pptr - i); 
-    child_trapframe->sp_el0 = (unsigned long)child->ustk_addr - offset;
+    fork_pgd(&parent->mm, &child->mm);
+    mappages(&child->mm, 0x3C000000, 0x3000000, 0x3C000000);
+    child_trapframe = (struct trapframe *)child->task_context.sp;
+    parent_trapframe = (struct trapframe *)trapframe;
+    child_trapframe->sp_el0 = parent_trapframe->sp_el0;
     child_trapframe->x[0] = 0;
+    
+    int_enable();
     
     if (list_empty(&parent->signal_list)) 
         goto out;
@@ -222,6 +233,7 @@ void context_switch(struct task_struct *next) {
             prev->used = 0;
     }
     // kprintf("context switch %d ~ %d\n", prev->tid, next->tid);
+    update_pgd(VIRT_2_PHY(next->mm.pgd));
     update_current(next);
     switch_to(&prev->task_context, &next->task_context);
 }
@@ -244,6 +256,7 @@ void kill_zombies() {
             kprintf("Kill zombie %d\n", to_release->tid);
             kfree(to_release->stk_addr);
             kfree(to_release->ustk_addr);
+            free_pgd(&to_release->mm);
             kfree(to_release);
             list_del(itr);
         }
@@ -282,12 +295,11 @@ void __exec(const char *user_code, char *const argv[]) {
     memcpy(user_prog1, user_code, 250000);
 
     pc  = mappages(&current->mm, 0x0, 250000, VIRT_2_PHY(user_prog1));
-    stk = mappages(&current->mm, 0xffffffffb000, 4096, VIRT_2_PHY(current->ustk_addr));
-    
-    asm volatile("msr sp_el0, %0" : : "r"(0xffffffffc000));
+    stk = mappages(&current->mm, USER_STK_LOW, STACKSIZE, 0);
+
+    asm volatile("msr sp_el0, %0" : : "r"(USER_STK_HIGH));
     asm volatile("msr elr_el1, %0": : "r"(0x0));
     asm volatile("msr spsr_el1, %0" : : "r"(0b0));
-    update_pgd(current->mm.pgd);
     asm volatile("eret");
 }
 

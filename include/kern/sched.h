@@ -90,4 +90,9 @@ static inline void thread_create(void (*func)()) {
     task_create(func, 100);
 }
 
+#define USER_STK_HIGH 0xfffffffff000
+#define USER_STK_LOW  0xffffffffb000
+
+#define STACKSIZE     16384 // 4096 * 4
+
 #endif 

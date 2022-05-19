@@ -1,6 +1,6 @@
 #ifndef PAGE_H
 #define PAGE_H
-
+ 
 #define PAGE_SIZE   4096
 #define PAGE_SHIFT  12
 #define PAGE_MASK   (~(PAGE_SIZE-1))
@@ -24,7 +24,12 @@
 
 #define pte_index(vaddr)      (((vaddr) >> PAGE_SHIFT) & (PTRS_PER_PTE - 1))
 
+void create_pgd(struct mm_struct *mm);
+void free_pgd(struct mm_struct *mm);
 
+void *walk(struct mm_struct *mm, unsigned long vaddr, unsigned long paddr);
 void *mappages(struct mm_struct *mm, unsigned long vaddr, unsigned long size, unsigned long paddr);
+
+void identity_paging(struct mm_struct *mm, unsigned long vaddr, unsigned long paddr);
 
 #endif

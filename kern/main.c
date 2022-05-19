@@ -88,8 +88,10 @@ void fork_test() {
 char *user_code;
 
 void user_prog() {
-    user_code = cpio_find("syscall.img");
-    __exec(user_code, "");
+    user_code = cpio_find("vm.img");
+    if (user_code)
+        __exec(user_code, "");
+    exit();
 }
 
 void idle_task() {

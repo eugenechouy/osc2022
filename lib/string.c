@@ -105,3 +105,10 @@ void* memcpy (void* dest, const void* src, unsigned int len) {
 		*d++ = *s++;
 	return dest;
 }
+
+void* memset (void *dest, int val, unsigned int len) {
+	unsigned char *ptr = dest;
+	while (len-- > 0) 
+		*ptr++ = val;
+	return dest;
+}

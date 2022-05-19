@@ -9,5 +9,6 @@ int itoa(long num, char* str, int base);
 long atoi(char* str, int base, unsigned int len);
 
 void* memcpy (void* dest, const void* src, unsigned int len);
+void* memset (void* dest, int val, unsigned int len);
 
 #endif

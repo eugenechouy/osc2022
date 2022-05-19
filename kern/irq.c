@@ -67,12 +67,10 @@ void irq_main() {
 }
 
 void irq_resched() {
-    /* haven't finish page table update
     struct task_struct *current = get_current();
     if (current->resched) {
         current->ctime = 1;
         current->resched = 0;
         schedule();
     }
-    */
 }

@@ -35,11 +35,12 @@
 
 #define PD_ACCESS       (1 << 10)
 
-#define PGD0_ATTR        PD_TABLE
-#define PUD0_ATTR        PD_TABLE
-#define PUD1_ATTR       (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
-#define PMD0_ATTR        PD_TABLE
-#define PTE_DEVICE_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_PAGE)
-#define PTE_NORMAL_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
+#define PGD0_ATTR               PD_TABLE
+#define PUD0_ATTR               PD_TABLE
+#define PUD1_ATTR               (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
+#define PMD0_ATTR               PD_TABLE
+#define PTE_DEVICE_ATTR         (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_PAGE)
+#define PTE_NORMAL_ATTR         (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
+#define PTE_NORMAL_LAZY_ATTR    ((MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
 
 #endif

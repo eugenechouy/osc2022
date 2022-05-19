@@ -1,12 +1,13 @@
 #include "peripheral/mailbox.h"
 #include "string.h"
+#include "kern/mm_types.h"
 
 unsigned int mailbox_call(unsigned char ch, unsigned int* mailbox) {
     unsigned int message;
     unsigned int data;
 
     // Combine the message address (upper 28 bits) with channel number (lower 4 bits)
-    message = ((unsigned long)mailbox & 0xfffffff0) | (ch & 0xf);
+    message = ((unsigned long)VIRT_2_PHY(mailbox) & 0xfffffff0) | (ch & 0xf);
     // Check if Mailbox 0 status register’s full flag is set
     while((*MAILBOX_STATUS & MAILBOX_FULL)) asm volatile("nop"); 
     // write to Mailbox 1 Read/Write register
@@ -17,8 +18,9 @@ unsigned int mailbox_call(unsigned char ch, unsigned int* mailbox) {
         // read from Mailbox 0 Read/Write register
         data = (unsigned int)(*MAILBOX_READ);
         // Check if the value is the same as you wrote
-        if (data == message) 
+        if (data == message)  {
             return mailbox[1] == REQUEST_SUCCEED;
+        }
     }
     return 0;
 }

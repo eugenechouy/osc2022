@@ -4,6 +4,8 @@
 #include "kern/sched.h"
 #include "kern/irq.h"
 #include "kern/signal.h"
+#include "kern/sync.h"
+#include "kern/page.h"
 #include "reset.h"
 #include "syscall.h"
 #include "peripheral/mailbox.h"
@@ -52,7 +54,8 @@ inline void sys_exit(struct trapframe *trapframe) {
 inline void sys_mbox_call(struct trapframe *trapframe) {
     unsigned char ch = trapframe->x[0];
     unsigned int *mailbox = (unsigned int *)trapframe->x[1];
-    trapframe->x[0] = mailbox_call(ch, mailbox);
+    unsigned int *kernel_addr = walk(&(get_current()->mm.pgd), mailbox, 0);
+    trapframe->x[0] = mailbox_call(ch, kernel_addr);
 }
 
 inline void sys_kill(struct trapframe *trapframe) {
@@ -116,10 +119,10 @@ void syscall_main(struct trapframe *trapframe) {
     int_disable();
 }
 
-void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {
-    unsigned int svc_num; 
+void svc_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {
+    unsigned int svc_num;
+    svc_num = esr & 0xFFFFFF;    
 
-    svc_num = esr & 0xFFFFFF;
     switch(svc_num) {
     case 0:
         syscall_main(trapframe);
@@ -137,7 +140,64 @@ void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct 
         kprintf("esr_el1: \t%x\n", esr);
         break;
     default:
-        uart_sync_puts("Undefined svc number, about to reboot...\n");
+        uart_sync_printNum(svc_num, 10);
+        uart_sync_puts(": Undefined svc number, about to reboot...\n");
+        reset(1000);
+        while(1);
+    }
+}
+
+void fault_parse(unsigned long sc) {
+    unsigned long far;
+    if (sc & 0b110000) {
+        kprintf("Others fault...\n");
+        return;
+    }
+
+    switch((sc & 0b1100) >> 2) {
+    case 0:
+        kprintf("Address size fault,");
+        break;
+    case 1:
+        kprintf("Translation fault,");
+        break;
+    case 2:
+        kprintf("Access flag fault,");
+        break;
+    case 3:
+        kprintf("Permission fault,");
+        break;
+    }
+    
+    kprintf(" level %d\n", sc & 0b11);
+    asm volatile("mrs %0, far_el1":"=r"(far));
+    kprintf("Address: \t0x%x\n", far);
+}
+
+void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {
+    switch(EC_BITS(esr)) {
+    case EC_SVC_64:
+        svc_main(spsr, elr, esr, trapframe);
+        break;
+    case EC_IA_EL0:
+        kprintf("(EL0)");
+    case EC_IA_EL1:
+        kprintf("Instruction Abort\n");
+        fault_parse(IFSC(esr));
+        kprintf("spsr_el0: \t0x%x\n", trapframe->sp_el0);
+        __exit();
+        break;
+    case EC_DA_EL0:
+        kprintf("(EL0)");
+    case EC_DA_EL1:
+        kprintf("Data Abort\n");
+        fault_parse(DFSC(esr));
+        kprintf("spsr_el0: \t0x%x\n", trapframe->sp_el0);
+        __exit();
+        break;
+    default:
+        uart_sync_printNum(EC_BITS(esr), 10);
+        uart_sync_puts(": Unknown ec bit, about to reboot...\n");
         reset(1000);
         while(1);
     }
