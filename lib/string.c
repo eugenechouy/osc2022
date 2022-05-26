@@ -112,3 +112,7 @@ void* memset (void *dest, int val, unsigned int len) {
 		*ptr++ = val;
 	return dest;
 }
+
+char *strcpy(char *dest, const char *src) {
+	return memcpy(dest, src, strlen(src)+1);
+}

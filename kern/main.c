@@ -22,7 +22,7 @@ void hw_info() {
     kputs("##########################################\n");
 }
 
-void rootfs_init() {
+void dtb_init() {
     if (fdt_init() < 0) {
         kputs("dtb: Bad magic\n");
         return;
@@ -100,6 +100,31 @@ void idle_task() {
     }
 }
 
+#include "fs/vfs.h"
+void test_fs() {
+    struct file *a = 0;
+    struct file *b = 0;
+    rootfs_init();
+    vfs_mkdir("/dir1");
+
+    vfs_open("/dir1/hello", O_CREAT, &a);
+    vfs_open("/dir1/world", O_CREAT, &b);
+    vfs_write(a, "Hello ", 6);
+    vfs_write(b, "World!", 6);
+    vfs_close(a);
+    vfs_close(b);
+
+    vfs_open("/dir1/hello", 0, &a);
+    vfs_open("/dir1/world", 0, &b);
+
+    char buf[32];
+    int cnt;
+    cnt = vfs_read(a, buf, 100);
+    cnt += vfs_read(b, buf + cnt, 100);
+    buf[cnt] = '\0';
+    kprintf("%s\n", buf);
+}
+
 void kern_main() { 
     kio_init();
     runqueue_init();
@@ -115,12 +140,13 @@ void kern_main() {
     kputs("press any key to continue...");
     kscanc();
     kputs("\n");
-    rootfs_init();
+    dtb_init();
     hw_info();
 
     mm_init();
     reserve_memory();
 
+    test_fs();
     thread_create(user_prog);
     // privilege_task_create(kill_zombies, 10);
     idle_task();

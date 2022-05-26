@@ -1,4 +1,5 @@
 #include "mmu.h"
+#include "string.h"
 #include "kern/slab.h"
 #include "kern/kio.h"
 #include "kern/mm_types.h"
@@ -39,7 +40,7 @@ void *pgtable_walk_pte(unsigned long *table, unsigned long idx, unsigned long pa
 void pgtable_walk_block(unsigned long *table, unsigned long idx, unsigned long paddr) {
     if (!table) {
         kprintf("pgtable_walk_block failed");
-        return 0;
+        return;
     }
     if (!table[idx]) {
         table[idx] = paddr | PUD1_ATTR | PD_USER_RW;
@@ -71,7 +72,7 @@ void *mappages(struct mm_struct *mm, unsigned long vaddr, unsigned long size, un
 
 void identity_paging(struct mm_struct *mm, unsigned long vaddr, unsigned long paddr) {
     if (!mm->pgd)
-        return 0;
+        return;
     void *pud;
     pud = pgtable_walk(mm->pgd, pgd_index(vaddr));
     pgtable_walk_block(pud, pud_index(vaddr), paddr);

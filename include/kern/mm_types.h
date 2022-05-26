@@ -38,11 +38,11 @@ struct mm_struct {
 
 #define PHY_FRAMES_NUM (MEM_TOTAL / PAGE_SIZE)
 
-#define PFN_2_PHY(pfn) (long)( pfn << PAGE_SHIFT )
-#define PHY_2_PFN(adr) ((long)adr >> PAGE_SHIFT )
+#define PFN_2_PHY(pfn) (long)((pfn) << PAGE_SHIFT)
+#define PHY_2_PFN(adr) ((long)(adr) >> PAGE_SHIFT)
 
 // kernel space address translation
-#define VIRT_2_PHY(vaddr) ((long)vaddr & 0x0000ffffffffffff)
-#define PHY_2_VIRT(vaddr) ((long)vaddr | 0xffff000000000000)
+#define VIRT_2_PHY(vaddr) ((long)(vaddr) & 0x0000ffffffffffff)
+#define PHY_2_VIRT(vaddr) ((long)(vaddr) | 0xffff000000000000)
 
 #endif

@@ -287,15 +287,12 @@ int __getpid() {
 }
 
 void __exec(const char *user_code, char *const argv[]) {
-    void *pc;
-    void *stk;
-
     struct task_struct *current = get_current();
     char *user_prog1 = kmalloc(250000);
     memcpy(user_prog1, user_code, 250000);
 
-    pc  = mappages(&current->mm, 0x0, 250000, VIRT_2_PHY(user_prog1));
-    stk = mappages(&current->mm, USER_STK_LOW, STACKSIZE, 0);
+    mappages(&current->mm, 0x0, 250000, VIRT_2_PHY(user_prog1));
+    mappages(&current->mm, USER_STK_LOW, STACKSIZE, 0);
 
     asm volatile("msr sp_el0, %0" : : "r"(USER_STK_HIGH));
     asm volatile("msr elr_el1, %0": : "r"(0x0));

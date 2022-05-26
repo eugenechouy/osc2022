@@ -14,6 +14,7 @@ INC_DIR = include
 SRCS   := $(wildcard kern/*.S)
 SRCS   += $(wildcard kern/*.c)
 SRCS   += $(wildcard lib/*.c)
+SRCS   += $(wildcard fs/*.c)
 SRCS   := $(notdir $(SRCS))
 OBJS   := $(patsubst %.c, $(OUT_DIR)/%_c.o, $(SRCS))
 OBJS   := $(patsubst %.S, $(OUT_DIR)/%_s.o, $(OBJS))
@@ -29,12 +30,14 @@ CFLAGS += -Wall -I$(INC_DIR) -c -fno-stack-protector
 
 $(IMG): $(ELF)
 	$(OBJCOPY) -O binary $(ELF) $(IMG)
-$(ELF): $(OBJS) $(LINKER_FILE $(OUT_DIR)/boot.o
+$(ELF): $(OBJS) $(LINKER_FILE)
 	$(LD) -T $(LINKER_FILE) -o $(ELF) $(OBJS)
 
 $(OUT_DIR)/%_s.o: kern/%.S $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 $(OUT_DIR)/%_c.o: kern/%.c $(OUT_DIR)
+	$(CC) $(CFLAGS) $< -o $@
+$(OUT_DIR)/%_c.o: fs/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 $(OUT_DIR)/%_c.o: lib/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
