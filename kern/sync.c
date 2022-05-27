@@ -9,6 +9,7 @@
 #include "reset.h"
 #include "syscall.h"
 #include "peripheral/mailbox.h"
+#include "fs/vfs.h"
 
 
 inline void sys_getpid(struct trapframe *trapframe) {
@@ -39,7 +40,7 @@ inline void sys_uart_write(struct trapframe *trapframe) {
 inline void sys_exec(struct trapframe *trapframe) {
     const char *name = (const char *)trapframe->x[0];
     char *user_code = cpio_find(name);
-    __exec(user_code, trapframe->x[1]);
+    __exec(user_code, (void*)trapframe->x[1]);
     trapframe->x[0] = 0;   
 }
 
@@ -54,7 +55,7 @@ inline void sys_exit(struct trapframe *trapframe) {
 inline void sys_mbox_call(struct trapframe *trapframe) {
     unsigned char ch = trapframe->x[0];
     unsigned int *mailbox = (unsigned int *)trapframe->x[1];
-    unsigned int *kernel_addr = walk(&(get_current()->mm.pgd), mailbox, 0);
+    unsigned int *kernel_addr = walk((struct mm_struct *)&(get_current()->mm.pgd), (unsigned long)mailbox, 0);
     trapframe->x[0] = mailbox_call(ch, kernel_addr);
 }
 
@@ -63,7 +64,7 @@ inline void sys_kill(struct trapframe *trapframe) {
 }
 
 inline void sys_signal(struct trapframe *trapframe) {
-    __signal(trapframe->x[0], trapframe->x[1]);
+    __signal(trapframe->x[0], (void*)trapframe->x[1]);
 }
 
 inline void sys_sigkill(struct trapframe *trapframe) {
@@ -72,6 +73,85 @@ inline void sys_sigkill(struct trapframe *trapframe) {
 
 inline void sys_sigreturn(struct trapframe *trapframe) {
     signal_back(trapframe);
+}
+
+inline void sys_open(struct trapframe *trapframe) {
+    int fd;
+    struct file *fh;
+    const char *pathname = (char *)trapframe->x[0];
+    int flags = trapframe->x[1];
+
+    if (vfs_open(pathname, flags, &fh) < 0)  {
+        trapframe->x[0] = -1;
+        return;
+    }
+    fd = fd_open(&(get_current()->files), fh);
+    trapframe->x[0] = fd;
+}
+
+inline void sys_close(struct trapframe *trapframe) {
+    struct file *fh;
+    int fd = trapframe->x[0];
+
+    if (fd < 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    fh = fd_close(&(get_current()->files), fd);
+    trapframe->x[0] = vfs_close(fh);
+}
+
+inline void sys_write(struct trapframe *trapframe) {
+    struct file *fh;
+    int fd = trapframe->x[0];
+    const char *buf = (char *)trapframe->x[1];
+    unsigned long count = trapframe->x[2];
+    
+    if (fd < 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    fh = fd_get(&(get_current()->files), fd);
+    if (fh == 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    trapframe->x[0] = vfs_write(fh, buf, count);
+}
+
+inline void sys_read(struct trapframe *trapframe) {
+    struct file *fh;
+    int fd = trapframe->x[0];
+    char *buf = (char *)trapframe->x[1];
+    unsigned long count = trapframe->x[2];
+    
+    if (fd < 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    fh = fd_get(&(get_current()->files), fd);
+    if (fh == 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    trapframe->x[0] = vfs_read(fh, buf, count);
+}
+
+inline void sys_mkdir(struct trapframe *trapframe) {
+    const char *pathname = (char *)trapframe->x[0];
+    // unsigned mode = trapframe->x[1];
+    trapframe->x[0] = vfs_mkdir(pathname);
+}
+
+inline void sys_mount(struct trapframe *trapframe) {
+    const char *target = (char *)trapframe->x[1];
+    const char *filesystem = (char *)trapframe->x[2];
+    trapframe->x[0] = vfs_mount(target, filesystem);
+}
+
+inline void sys_chdir(struct trapframe *trapframe) {
+    const char *path = (char *)trapframe->x[0];
+    trapframe->x[0] = vfs_chdir(path);
 }
 
 void syscall_main(struct trapframe *trapframe) {
@@ -108,7 +188,28 @@ void syscall_main(struct trapframe *trapframe) {
         case SYS_SIGKILL:
             sys_sigkill(trapframe);
             break;
-        case 10:
+        case SYS_OPEN:
+            sys_open(trapframe);
+            break;
+        case SYS_CLOSE:
+            sys_close(trapframe);
+            break;
+        case SYS_WRITE:
+            sys_write(trapframe);
+            break;
+        case SYS_READ:
+            sys_read(trapframe);
+            break;
+        case SYS_MKDIR:
+            sys_mkdir(trapframe);
+            break;
+        case SYS_MOUNT:
+            sys_mount(trapframe);
+            break;
+        case SYS_CHDIR:
+            sys_chdir(trapframe);
+            break;
+        case 30:
             sys_sigreturn(trapframe);
             break;
         default:

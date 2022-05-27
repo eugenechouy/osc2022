@@ -6,6 +6,6 @@ struct tmpfs_inode {
 };
 
 int tmpfs_register();
-int tmpfs_setup_mount(struct filesystem *fs, struct mount *mount);
+struct filesystem* tmpfs_get_filesystem();
 
 #endif

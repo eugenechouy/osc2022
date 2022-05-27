@@ -53,10 +53,6 @@ void shell_parse(char *cmd) {
         kputs("FileName: ");
         shell_input(args);
         cpio_cat(args);
-    } else if (!strcmp(cmd, "exec")) {
-        kputs("FileName: ");
-        shell_input(args);
-        cpio_exec(args);
     } else if (!strcmp(cmd, "setTimeout")) {
         shell_input(args);
         set_timeout(args);

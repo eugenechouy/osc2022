@@ -90,7 +90,7 @@ void free_pgtable(unsigned long *table, int level) {
     void *next;
     for(int i=0 ; i<512 ; i++) {
         if (table[i]) {
-            next = PHY_2_VIRT(table[i] & PAGE_MASK);
+            next = (void*)PHY_2_VIRT(table[i] & PAGE_MASK);
             if (level != 4) 
                 free_pgtable(next, level+1);
             // if device memory
@@ -106,7 +106,7 @@ void free_pgd(struct mm_struct *mm) {
     void *pud;
     for(int i=0 ; i<512 ; i++) {
         if (pgd[i]) {  
-            pud = PHY_2_VIRT(pgd[i] & PAGE_MASK);
+            pud = (void*)PHY_2_VIRT(pgd[i] & PAGE_MASK);
             free_pgtable(pud, 2);
             kfree(pud);
         }
@@ -127,7 +127,7 @@ void fork_pgtable(unsigned long *ptable, unsigned long *ctable, int level) {
 
     for(int i=0 ; i<512 ; i++) {
         if (ptable[i]) {
-            pnext = PHY_2_VIRT(ptable[i] & PAGE_MASK);
+            pnext = (void*)PHY_2_VIRT(ptable[i] & PAGE_MASK);
             if (level == 4) {
                 cnext = pgtable_walk_pte(ctable, i, 0);
                 memcpy(cnext, pnext, PAGE_SIZE);
@@ -150,7 +150,7 @@ void fork_pgd(struct mm_struct *parent_mm, struct mm_struct *child_mm) {
     
     for(int i=0 ; i<512 ; i++) {
         if (ppgd[i]) {  
-            ppud = PHY_2_VIRT(ppgd[i] & PAGE_MASK);
+            ppud = (void*)PHY_2_VIRT(ppgd[i] & PAGE_MASK);
             cpud = pgtable_walk(cpgd, i);
             fork_pgtable(ppud, cpud, 2);
         }

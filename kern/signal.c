@@ -25,7 +25,7 @@ void signal_default(int pid, int SIGNAL) {
 
 void signal_return() {
     asm volatile(
-        "mov x8, #10 \n\t"
+        "mov x8, #30 \n\t"
         "svc #0 \n\t"
     );
 }

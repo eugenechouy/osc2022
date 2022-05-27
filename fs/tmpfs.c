@@ -46,11 +46,11 @@ int tmpfs_mkdir(struct inode* dir_node, struct inode** target, const char* compo
     file operation
 */
 int tmpfs_open(struct inode* file_node, struct file** target) {
-    
+    return 0;
 }
 
 int tmpfs_close(struct file *file) {
-
+    return 0;
 }
 
 int tmpfs_write(struct file *file, const void *buf, long len) {
@@ -94,14 +94,24 @@ int tmpfs_register() {
     tmpfs_fop->read   = tmpfs_read;
     tmpfs_fop->open   = tmpfs_open;
     tmpfs_fop->close  = tmpfs_close;
+    tmpfs_dop = 0;
     return 0;
 }
-
 
 int tmpfs_setup_mount(struct filesystem *fs, struct mount *mount) {
     mount->fs   = fs;
     mount->root = tmpfs_create_dentry(0, "/", I_DIRECTORY);
     return 0;
+}
+
+struct filesystem *tmpfs = 0;
+struct filesystem* tmpfs_get_filesystem() {
+    if (tmpfs == 0) {
+        tmpfs = (struct filesystem *)kmalloc(sizeof(struct filesystem));
+        strcpy(tmpfs->name, "tmpfs");
+        tmpfs->setup_mount = tmpfs_setup_mount;
+    }
+    return tmpfs;
 }
 
 struct inode* tmpfs_create_inode(struct dentry *dentry, unsigned int type) {
@@ -119,7 +129,8 @@ struct dentry* tmpfs_create_dentry(struct dentry *parent, const char *name, unsi
     strcpy(dentry->d_name, name);
     dentry->d_parent = parent;
     dentry->d_inode  = tmpfs_create_inode(dentry, type);
-    dentry->d_op     = tmpfs_dop;
+    // dentry->d_op     = tmpfs_dop;
+    dentry->d_mount  = 0;
     INIT_LIST_HEAD(&dentry->d_child);
     INIT_LIST_HEAD(&dentry->d_subdirs);
     if (parent) 

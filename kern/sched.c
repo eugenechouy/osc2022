@@ -90,6 +90,9 @@ void task_init() {
     task_pool[0].used  = 1;
     task_pool[0].prio  = 127;
     task_pool[0].state = RUNNING;
+    task_pool[0].cwd   = rootfs->root;
+    task_pool[0].croot = rootfs->root;
+    fd_init(&task_pool[0].files);
     task_pool[0].mm.pgd = (unsigned long *)&__kernel_pgd;
     INIT_LIST_HEAD(&task_pool[0].signal_pend_list);
     update_current(&task_pool[0]);
@@ -115,6 +118,8 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
+    new_task->cwd       = rootfs->root;
+    new_task->croot     = rootfs->root;
     create_pgd(&new_task->mm);
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
@@ -152,6 +157,8 @@ struct task_struct *task_create(void (*func)(), int prio) {
     new_task->state     = RUNNING;
     new_task->ctime     = TASK_CTIME;
     new_task->resched   = 0;
+    new_task->cwd       = rootfs->root;
+    new_task->croot     = rootfs->root;
     create_pgd(&new_task->mm);
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
@@ -261,14 +268,6 @@ void kill_zombies() {
             list_del(itr);
         }
     }
-}
-
-extern void run_el1_to_el0(void *, void *);
-
-void do_exec(void (*func)()) {
-    struct task_struct *current = get_current();
-    // should use user stack
-    run_el1_to_el0(func, current->ustk_addr);
 }
 
 struct task_struct* get_task_struct(int pid) {

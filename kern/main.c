@@ -44,7 +44,7 @@ void reserve_memory() {
     kprintf("initramfs\n");
     cpio_reserve();
     kprintf("initial kernel stack\n");
-    mm_reserve(PHY_2_VIRT((void *)&__stack_kernel_top - 0x2000), PHY_2_VIRT((void *)&__stack_kernel_top));
+    mm_reserve((void *)PHY_2_VIRT((void *)&__stack_kernel_top - 0x2000), (void *)PHY_2_VIRT((void *)&__stack_kernel_top));
 }
 
 void delay(int times) {
@@ -90,7 +90,7 @@ char *user_code;
 void user_prog() {
     user_code = cpio_find("vm.img");
     if (user_code)
-        __exec(user_code, "");
+        __exec(user_code, 0);
     exit();
 }
 
@@ -100,33 +100,37 @@ void idle_task() {
     }
 }
 
-#include "fs/vfs.h"
 void test_fs() {
-    struct file *a = 0;
-    struct file *b = 0;
-    rootfs_init();
-    vfs_mkdir("/dir1");
+    char buf[8];
+    mkdir("mnt", 0);
+    int fd = open("/mnt/a.txt", O_CREAT);
+    write(fd, "Hi", 2);
+    close(fd);
+    chdir("mnt");
+    fd = open("./a.txt", 0);
+    if (fd < 0) {
+        kprintf("error1\n");
+        return;
+    }
+    read(fd, buf, 2);
+    if (strncmp(buf, "Hi", 2) != 0) {
+        kprintf("error2\n");
+        return;
+    }
 
-    vfs_open("/dir1/hello", O_CREAT, &a);
-    vfs_open("/dir1/world", O_CREAT, &b);
-    vfs_write(a, "Hello ", 6);
-    vfs_write(b, "World!", 6);
-    vfs_close(a);
-    vfs_close(b);
-
-    vfs_open("/dir1/hello", 0, &a);
-    vfs_open("/dir1/world", 0, &b);
-
-    char buf[32];
-    int cnt;
-    cnt = vfs_read(a, buf, 100);
-    cnt += vfs_read(b, buf + cnt, 100);
-    buf[cnt] = '\0';
-    kprintf("%s\n", buf);
+    chdir("..");
+    mount("", "mnt", "tmpfs", 0, 0);
+    fd = open("mnt/a.txt", 0);
+    if (fd > 0) {
+        kprintf("error3\n");
+        return;
+    }
 }
 
 void kern_main() { 
     kio_init();
+    mm_init();
+    rootfs_init();
     runqueue_init();
     task_init();
     int_init();
@@ -143,7 +147,6 @@ void kern_main() {
     dtb_init();
     hw_info();
 
-    mm_init();
     reserve_memory();
 
     test_fs();

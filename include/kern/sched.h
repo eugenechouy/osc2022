@@ -3,8 +3,10 @@
 
 #include "list.h"
 #include "bitmap.h"
-#include "signal.h"
-#include "mm_types.h"
+#include "kern/signal.h"
+#include "kern/mm_types.h"
+#include "kern/fdtable.h"
+#include "fs/vfs.h"
 
 #define MAX_PRIV_TASK_NUM 50
 #define TASK_CTIME        1
@@ -43,6 +45,10 @@ struct task_struct {
 
     void               *stk_addr;
     void               *ustk_addr; 
+
+    struct dentry      *cwd;
+    struct dentry      *croot;
+    struct files_struct files;
 
     struct list_head signal_list;
     struct list_head signal_pend_list;

@@ -9,7 +9,6 @@
 #define I_DIRECTORY 2
 
 struct inode {
-    struct mount            *i_mount;
     struct inode_operations *i_op;
     struct file_operations  *i_fop;
     struct dentry           *i_dentry;
@@ -24,6 +23,7 @@ struct dentry {
     struct dentry            *d_parent;
     struct inode             *d_inode;
     struct dentry_operations *d_op;
+    struct mount             *d_mount;
     struct list_head         d_child;
     struct list_head         d_subdirs;
 };
@@ -66,11 +66,15 @@ struct inode_operations {
 struct dentry_operations {
 };
 
+extern struct mount* rootfs;
+
 void rootfs_init();
 int vfs_open(const char* pathname, int flags, struct file** target);
 int vfs_close(struct file *file);
 int vfs_write(struct file* file, const void* buf, long len);
 int vfs_read(struct file* file, void* buf, long len);
 int vfs_mkdir(const char* pathname);
+int vfs_mount(const char* target, const char* filesystem);
+int vfs_chdir(const char *pathname);
 
 #endif

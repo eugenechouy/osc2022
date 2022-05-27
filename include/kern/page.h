@@ -26,6 +26,7 @@
 
 void create_pgd(struct mm_struct *mm);
 void free_pgd(struct mm_struct *mm);
+void fork_pgd(struct mm_struct *parent_mm, struct mm_struct *child_mm);
 
 void *walk(struct mm_struct *mm, unsigned long vaddr, unsigned long paddr);
 void *mappages(struct mm_struct *mm, unsigned long vaddr, unsigned long size, unsigned long paddr);

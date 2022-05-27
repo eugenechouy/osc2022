@@ -58,3 +58,44 @@ sigkill:
     svc #0
     ret
 
+.global open
+open:
+    mov x8, #11
+    svc #0
+    ret
+
+.global close
+close:
+    mov x8, #12
+    svc #0
+    ret
+
+.global write
+write:
+    mov x8, #13
+    svc #0
+    ret
+
+.global read
+read:
+    mov x8, #14
+    svc #0
+    ret
+
+.global mkdir
+mkdir:
+    mov x8, #15
+    svc #0
+    ret
+
+.global mount
+mount:
+    mov x8, #16
+    svc #0
+    ret
+
+.global chdir
+chdir:
+    mov x8, #17
+    svc #0
+    ret

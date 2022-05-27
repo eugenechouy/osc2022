@@ -125,7 +125,7 @@ void* kmalloc(unsigned int size) {
         ret = __do_kmalloc(size);
         // kprintf("kmalloc: slab %x\n", ret);
     }
-    return PHY_2_VIRT(ret);
+    return (void*)PHY_2_VIRT(ret);
 }
 
 void kfree(void *addr) {

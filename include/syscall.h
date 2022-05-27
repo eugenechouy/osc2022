@@ -23,4 +23,22 @@ void kill(int pid);
 void signal(int SIGNAL, void (*handler)());
 void sigkill(int pid, int SIGNAL);
 
+#define SYS_OPEN        11
+#define SYS_CLOSE       12
+#define SYS_WRITE       13
+#define SYS_READ        14
+#define SYS_MKDIR       15
+#define SYS_MOUNT       16
+#define SYS_CHDIR       17
+
+#define O_CREAT 00000100
+
+int open(const char *pathname, int flags);
+int close(int fd);
+long write(int fd, const void *buf, unsigned long count);
+long read(int fd, void *buf, unsigned long count);
+int mkdir(const char *pathname, unsigned mode);
+int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
+int chdir(const char *path);
+
 #endif
