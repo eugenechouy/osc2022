@@ -4,10 +4,11 @@
 #include "kern/sched.h"
 #include "string.h"
 #include "byteswap.h"
+#include "syscall.h"
 
 // qemu default address
 void *CPIO_ADDRESS = (void*)PHY_2_VIRT(0x8000000);
-void *CPIO_END_ADR = 0; // wired bugs in physical machine
+void *CPIO_END_ADR = 0; // weird bugs in physical machine
 
 void initramfs_callback(char *node_name, char *prop_name, void *prop_value) {
     if (!strncmp(node_name, "chosen", 6) && !strncmp(prop_name, "linux,initrd-start", 18)) {

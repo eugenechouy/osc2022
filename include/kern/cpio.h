@@ -2,6 +2,7 @@
 #define CPIO_H
 
 // #define CPIO_ADDRESS (void*)0x8000000
+extern void *CPIO_ADDRESS;
 
 #define CPIO_MAGIC "070701"
 #define CPIO_END   "TRAILER!!!"
@@ -25,10 +26,12 @@ struct cpio_newc_header {
 };
 
 void initramfs_callback(char *node_name, char *prop_name, void *prop_value);
-void cpio_ls();
-void cpio_cat(const char *filename);
+void initramfs_init();
+
+void  cpio_ls();
+void  cpio_cat(const char *filename);
 char* cpio_find(const char *filename);
 
-void cpio_reserve();
+void  cpio_reserve();
 
 #endif

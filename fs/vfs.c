@@ -100,9 +100,11 @@ int vfs_open(const char *pathname, int flags, struct file **target) {
         *target = create_fh(file_node);
         return 0;
     } 
-    // kprintf("%s not found\n", pathname);
+    // kprintf("%s not found under %s\n", pathname, dir_node->i_dentry->d_name);
     
     if (flags & O_CREAT) {
+        if (dir_node->i_flags == I_FRO) 
+            return -3;
         if (dir_node->i_op->create(dir_node, &file_node, filename) < 0)
             return -1;
         *target = create_fh(file_node);
@@ -129,6 +131,9 @@ int vfs_write(struct file* file, const void* buf, long len) {
         kprintf("vfs_write: not a regular file %d\n", file->inode->i_type);
         return -1;
     }
+    if (file->inode->i_flags == I_FRO) {
+        return -3;
+    }
     return file->fop->write(file, buf, len);
 }
 
@@ -150,6 +155,13 @@ int vfs_mkdir(const char* pathname) {
     struct inode *new_dir_node;
     char dirname[32];
     vfs_walk(pathname, &dir_node, dirname);
+    if (dir_node->i_type != I_DIRECTORY) {
+        kprintf("vfs_mkdir: not a directory %d\n", dir_node->i_type);
+        return -1;
+    }
+    if (dir_node->i_flags == I_FRO) {
+        return -3;
+    }
     return dir_node->i_op->mkdir(dir_node, &new_dir_node, dirname);
 }
 
@@ -162,10 +174,19 @@ int vfs_mount(const char* target, const char* filesystem) {
 
     if (mountpoint->i_type != I_DIRECTORY) 
         return -1;
+    if (!strcmp(mountpoint->i_dentry->d_name, "/")) {
+        kprintf("%s already been mounted\n", target);
+        return -2;
+    }
     
     if (!strcmp(filesystem, "tmpfs")) {
         mt = (struct mount *)kmalloc(sizeof(struct mount));
         fs = tmpfs_get_filesystem();
+        fs->setup_mount(fs, mt);
+        mountpoint->i_dentry->d_mount = mt;
+    } else if (!strcmp(filesystem, "initramfs")) {
+        mt = (struct mount *)kmalloc(sizeof(struct mount));
+        fs = initramfs_get_filesystem();
         fs->setup_mount(fs, mt);
         mountpoint->i_dentry->d_mount = mt;
     }
@@ -178,4 +199,14 @@ int vfs_chdir(const char *pathname) {
     vfs_walk(pathname, &dir_node, remain);
     get_current()->cwd = dir_node->i_dentry;
     return 0;
+}
+
+long vfs_lseek64(struct file *file, long offset, int whence) {
+    if (file == 0) 
+        return -1;
+    if (file->inode->i_type != I_FILE) {
+        kprintf("vfs_lseek64: not a regular file %d\n", file->inode->i_type);
+        return -1;
+    }
+    return file->fop->lseek64(file, offset, whence);
 }

@@ -39,8 +39,7 @@ inline void sys_uart_write(struct trapframe *trapframe) {
 
 inline void sys_exec(struct trapframe *trapframe) {
     const char *name = (const char *)trapframe->x[0];
-    char *user_code = cpio_find(name);
-    __exec(user_code, (void*)trapframe->x[1]);
+    __exec(name, (void*)trapframe->x[1]);
     trapframe->x[0] = 0;   
 }
 
@@ -80,9 +79,10 @@ inline void sys_open(struct trapframe *trapframe) {
     struct file *fh;
     const char *pathname = (char *)trapframe->x[0];
     int flags = trapframe->x[1];
+    int ret = vfs_open(pathname, flags, &fh);
 
-    if (vfs_open(pathname, flags, &fh) < 0)  {
-        trapframe->x[0] = -1;
+    if (ret < 0)  {
+        trapframe->x[0] = ret;
         return;
     }
     fd = fd_open(&(get_current()->files), fh);
@@ -154,6 +154,24 @@ inline void sys_chdir(struct trapframe *trapframe) {
     trapframe->x[0] = vfs_chdir(path);
 }
 
+inline void sys_lseek64(struct trapframe *trapframe) {
+    struct file *fh;
+    int fd      = trapframe->x[0];
+    long offset = trapframe->x[1];
+    int whence  = trapframe->x[2];
+
+    if (fd < 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    fh = fd_get(&(get_current()->files), fd);
+    if (fh == 0) {
+        trapframe->x[0] = -1;
+        return;
+    }
+    trapframe->x[0] = vfs_lseek64(fh, offset, whence);
+}
+
 void syscall_main(struct trapframe *trapframe) {
     int_enable();
     long syscall_num = trapframe->x[8];
@@ -208,6 +226,9 @@ void syscall_main(struct trapframe *trapframe) {
             break;
         case SYS_CHDIR:
             sys_chdir(trapframe);
+            break;
+        case SYS_LSEEK64:
+            sys_lseek64(trapframe);
             break;
         case 30:
             sys_sigreturn(trapframe);

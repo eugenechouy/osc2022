@@ -47,50 +47,8 @@ void reserve_memory() {
     mm_reserve((void *)PHY_2_VIRT((void *)&__stack_kernel_top - 0x2000), (void *)PHY_2_VIRT((void *)&__stack_kernel_top));
 }
 
-void delay(int times) {
-    while(times--) {
-        asm volatile("nop");
-    }
-}
-
-#include "user_lib.h"
-
-void fork_test() {
-    printf("\nFork Test, pid %d\n", getpid());
-    int cnt = 1;
-    int ret = 0;
-    if ((ret = fork()) == 0) { // child
-        long long cur_sp;
-        asm volatile("mov %0, sp" : "=r"(cur_sp));
-        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
-        ++cnt;
-
-        if ((ret = fork()) != 0){
-            asm volatile("mov %0, sp" : "=r"(cur_sp));
-            printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
-        }
-        else{
-            while (cnt < 5) {
-                asm volatile("mov %0, sp" : "=r"(cur_sp));
-                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
-                delay(1000000);
-                ++cnt;
-            }
-        }
-        exit();
-    }
-    else {
-        printf("parent here, pid %d, child %d\n", getpid(), ret);
-    }
-    exit(); 
-}
-
-char *user_code;
-
 void user_prog() {
-    user_code = cpio_find("vm.img");
-    if (user_code)
-        __exec(user_code, 0);
+    exec("/initramfs/vfs1.img", 0);
     exit();
 }
 
@@ -100,32 +58,12 @@ void idle_task() {
     }
 }
 
-void test_fs() {
-    char buf[8];
-    mkdir("mnt", 0);
-    int fd = open("/mnt/a.txt", O_CREAT);
-    write(fd, "Hi", 2);
-    close(fd);
-    chdir("mnt");
-    fd = open("./a.txt", 0);
-    if (fd < 0) {
-        kprintf("error1\n");
-        return;
-    }
-    read(fd, buf, 2);
-    if (strncmp(buf, "Hi", 2) != 0) {
-        kprintf("error2\n");
-        return;
-    }
-
-    chdir("..");
-    mount("", "mnt", "tmpfs", 0, 0);
-    fd = open("mnt/a.txt", 0);
-    if (fd > 0) {
-        kprintf("error3\n");
-        return;
-    }
+void initramfs_init() {
+    mkdir("/initramfs", 0);
+    mount(0, "/initramfs", "initramfs", 0, 0);
 }
+
+#include "test_func.h"
 
 void kern_main() { 
     kio_init();
@@ -149,7 +87,7 @@ void kern_main() {
 
     reserve_memory();
 
-    test_fs();
+    initramfs_init();
     thread_create(user_prog);
     // privilege_task_create(kill_zombies, 10);
     idle_task();

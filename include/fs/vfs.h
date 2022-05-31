@@ -3,10 +3,20 @@
 
 #include "list.h"
 
+// syscall para
 #define O_CREAT 00000100
 
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
+// i_type
 #define I_FILE      1
 #define I_DIRECTORY 2
+
+// i_flags
+#define I_FRO 1
+#define I_FRW 2
 
 struct inode {
     struct inode_operations *i_op;
@@ -76,5 +86,8 @@ int vfs_read(struct file* file, void* buf, long len);
 int vfs_mkdir(const char* pathname);
 int vfs_mount(const char* target, const char* filesystem);
 int vfs_chdir(const char *pathname);
+long vfs_lseek64(struct file *file, long offset, int whence);
+
+void vfs_walk_recursive(struct inode *dir_node, const char *pathname, struct inode **target, char *target_name);
 
 #endif

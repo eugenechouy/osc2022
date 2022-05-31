@@ -3,6 +3,7 @@
 #include "kern/slab.h"
 #include "kern/kio.h"
 #include "string.h"
+#include "fs/vfs.h"
 
 #define ROUND_UP(n,d)   (((n) + (d-1)) & (-d))
 #define ROUND_DOWN(n,d) ((n) & (-d))
@@ -285,12 +286,23 @@ int __getpid() {
     return current->tid;
 }
 
-void __exec(const char *user_code, char *const argv[]) {
+void __exec(const char *name, char *const argv[]) {
     struct task_struct *current = get_current();
-    char *user_prog1 = kmalloc(250000);
-    memcpy(user_prog1, user_code, 250000);
+    struct file *file_node;
+    long filesize; 
+    char *user_prog;
+    
+    if (vfs_open(name, 0, &file_node) < 0) {
+        kprintf("Failed to exec %s", name);
+        return;
+    }
 
-    mappages(&current->mm, 0x0, 250000, VIRT_2_PHY(user_prog1));
+    filesize = vfs_lseek64(file_node, 0, SEEK_END);
+    vfs_lseek64(file_node, 0, SEEK_SET);
+    user_prog = kmalloc(filesize);
+    vfs_read(file_node, user_prog, filesize);
+
+    mappages(&current->mm, 0x0, 250000, VIRT_2_PHY(user_prog));
     mappages(&current->mm, USER_STK_LOW, STACKSIZE, 0);
 
     asm volatile("msr sp_el0, %0" : : "r"(USER_STK_HIGH));
