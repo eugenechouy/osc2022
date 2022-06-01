@@ -88,6 +88,7 @@ void kern_main() {
     reserve_memory();
 
     initramfs_init();
+    fs_test();    
     thread_create(user_prog);
     // privilege_task_create(kill_zombies, 10);
     idle_task();

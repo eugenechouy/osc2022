@@ -32,7 +32,7 @@ void softirq_active(int num) {
 void softirq_run() {
     int num = find_first_bit(irqueue_map);
 
-    while (num != 64) {
+    while (num < SOFTIRQ_NUM) {
         // higher priority interrupt is running, return
         if (irqueue[num].state == IRQ_RUNNING)
             break;

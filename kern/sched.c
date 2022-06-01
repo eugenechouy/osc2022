@@ -121,6 +121,7 @@ struct task_struct *privilege_task_create(void (*func)(), int prio) {
     new_task->resched   = 0;
     new_task->cwd       = rootfs->root;
     new_task->croot     = rootfs->root;
+    fd_init(&new_task->files);
     create_pgd(&new_task->mm);
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);
@@ -160,6 +161,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     new_task->resched   = 0;
     new_task->cwd       = rootfs->root;
     new_task->croot     = rootfs->root;
+    fd_init(&new_task->files);
     create_pgd(&new_task->mm);
     INIT_LIST_HEAD(&new_task->signal_list);
     INIT_LIST_HEAD(&new_task->signal_pend_list);

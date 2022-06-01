@@ -20,7 +20,7 @@ OBJS   := $(patsubst %.c, $(OUT_DIR)/%.o, $(SRCS))
 OBJS   := $(patsubst %.S, $(OUT_DIR)/%.o, $(OBJS))
 
 # -fno-stack-protector: to disable stack protection
-CFLAGS := -O1 -fno-builtin -nostdinc
+CFLAGS := -O1 -fno-builtin -nostdinc -DBOOT_LOADER
 CFLAGS += -Wall -I$(INC_DIR) -c -fno-stack-protector 
 
 .PHONY: asm debug clean run pty
@@ -49,6 +49,6 @@ debug: $(IMG)
 run: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio 
 pty:
-	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -serial null -serial pty -initrd ../initramfs.cpio -dtb ../raspi3/bcm2710-rpi-3-b-plus.dtb
+	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial pty -initrd ../initramfs.cpio -dtb ../raspi3/bcm2710-rpi-3-b-plus.dtb
 clean:
 	rm -rf $(OUT_DIR) $(ELF) $(IMG)

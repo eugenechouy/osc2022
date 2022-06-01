@@ -80,7 +80,9 @@ inline void sys_open(struct trapframe *trapframe) {
     const char *pathname = (char *)trapframe->x[0];
     int flags = trapframe->x[1];
     int ret = vfs_open(pathname, flags, &fh);
-
+#ifdef DEBUG_FS
+    kprintf("open(%s, %d)\n", pathname, flags);
+#endif
     if (ret < 0)  {
         trapframe->x[0] = ret;
         return;
@@ -92,7 +94,9 @@ inline void sys_open(struct trapframe *trapframe) {
 inline void sys_close(struct trapframe *trapframe) {
     struct file *fh;
     int fd = trapframe->x[0];
-
+#ifdef DEBUG_FS
+    kprintf("close(%d)\n", fd);
+#endif
     if (fd < 0) {
         trapframe->x[0] = -1;
         return;
@@ -106,7 +110,9 @@ inline void sys_write(struct trapframe *trapframe) {
     int fd = trapframe->x[0];
     const char *buf = (char *)trapframe->x[1];
     unsigned long count = trapframe->x[2];
-    
+#ifdef DEBUG_FS
+    kprintf("write(%d, %s, %d)\n", fd, buf, count);
+#endif
     if (fd < 0) {
         trapframe->x[0] = -1;
         return;
@@ -124,7 +130,9 @@ inline void sys_read(struct trapframe *trapframe) {
     int fd = trapframe->x[0];
     char *buf = (char *)trapframe->x[1];
     unsigned long count = trapframe->x[2];
-    
+#ifdef DEBUG_FS 
+    kprintf("read(%d, %d)\n", fd, count);
+#endif
     if (fd < 0) {
         trapframe->x[0] = -1;
         return;
@@ -139,6 +147,9 @@ inline void sys_read(struct trapframe *trapframe) {
 
 inline void sys_mkdir(struct trapframe *trapframe) {
     const char *pathname = (char *)trapframe->x[0];
+#ifdef DEBUG_FS
+    kprintf("mkdir(%s)\n", pathname);
+#endif
     // unsigned mode = trapframe->x[1];
     trapframe->x[0] = vfs_mkdir(pathname);
 }
@@ -146,11 +157,17 @@ inline void sys_mkdir(struct trapframe *trapframe) {
 inline void sys_mount(struct trapframe *trapframe) {
     const char *target = (char *)trapframe->x[1];
     const char *filesystem = (char *)trapframe->x[2];
+#ifdef DEBUG_FS
+    kprintf("mount(%s, %s)\n", target, filesystem);
+#endif
     trapframe->x[0] = vfs_mount(target, filesystem);
 }
 
 inline void sys_chdir(struct trapframe *trapframe) {
     const char *path = (char *)trapframe->x[0];
+#ifdef DEBUG_FS
+    kprintf("chdir(%s)\n", path);
+#endif
     trapframe->x[0] = vfs_chdir(path);
 }
 

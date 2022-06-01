@@ -184,11 +184,13 @@ int vfs_mount(const char* target, const char* filesystem) {
         fs = tmpfs_get_filesystem();
         fs->setup_mount(fs, mt);
         mountpoint->i_dentry->d_mount = mt;
+        mt->root->d_parent = mountpoint->i_dentry->d_parent;
     } else if (!strcmp(filesystem, "initramfs")) {
         mt = (struct mount *)kmalloc(sizeof(struct mount));
         fs = initramfs_get_filesystem();
         fs->setup_mount(fs, mt);
         mountpoint->i_dentry->d_mount = mt;
+        mt->root->d_parent = mountpoint->i_dentry->d_parent;
     }
     return 0;
 }
