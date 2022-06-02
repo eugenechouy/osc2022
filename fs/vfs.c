@@ -1,11 +1,21 @@
 #include "fs/vfs.h"
 #include "fs/tmpfs.h"
+#include "fs/uartfs.h"
 #include "string.h"
 #include "kern/kio.h"
 #include "kern/sched.h"
 #include "kern/slab.h"
 
 struct mount* rootfs;
+
+/*
+    device file
+*/
+#define MAX_DEVICE_FILE 10
+
+int    device_id;
+struct file_operations *device_files[MAX_DEVICE_FILE];
+
 
 int register_filesystem(struct filesystem* fs) {
     if (!strcmp(fs->name, "tmpfs")) {
@@ -20,6 +30,12 @@ void rootfs_init() {
 
     rootfs = (struct mount *)kmalloc(sizeof(struct mount));
     tmpfs->setup_mount(tmpfs, rootfs);
+
+    // device file init
+    device_id = 0;
+    memset(device_files, 0, MAX_DEVICE_FILE);
+    vfs_mkdir("/dev");
+    uartfs_register();
 }
 
 void vfs_walk_recursive(struct inode *dir_node, const char *pathname, struct inode **target, char *target_name) {
@@ -211,4 +227,32 @@ long vfs_lseek64(struct file *file, long offset, int whence) {
         return -1;
     }
     return file->fop->lseek64(file, offset, whence);
+}
+
+int vfs_mknod(const char* pathname, int mode, int dev) {
+    // 1. create special file
+    // 2. change special file's operation to dev operation
+    struct inode *dir_node;
+    struct inode *file_node;
+    char filename[32];
+    vfs_walk(pathname, &dir_node, filename);
+    
+    if (dir_node->i_op->lookup(dir_node, &file_node, filename) >= 0) {
+        kprintf("vfs_mknod: %s already exist\n", pathname);
+        return -1;
+    } 
+    if (dir_node->i_flags == I_FRO) 
+        return -3;
+    if (dir_node->i_op->create(dir_node, &file_node, filename) < 0)
+        return -1;
+    file_node->i_fop = device_files[dev];
+    return 0;
+}
+
+int vfs_register_device(struct file_operations *device_fop) {
+    // register device operation and return device id
+    if (device_id == MAX_DEVICE_FILE)
+        return -1;
+    device_files[device_id] = device_fop;
+    return device_id++;
 }

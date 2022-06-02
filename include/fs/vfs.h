@@ -79,14 +79,18 @@ struct dentry_operations {
 extern struct mount* rootfs;
 
 void rootfs_init();
-int vfs_open(const char* pathname, int flags, struct file** target);
-int vfs_close(struct file *file);
-int vfs_write(struct file* file, const void* buf, long len);
-int vfs_read(struct file* file, void* buf, long len);
-int vfs_mkdir(const char* pathname);
-int vfs_mount(const char* target, const char* filesystem);
-int vfs_chdir(const char *pathname);
+
+int  vfs_open(const char* pathname, int flags, struct file** target);
+int  vfs_close(struct file *file);
+int  vfs_write(struct file* file, const void* buf, long len);
+int  vfs_read(struct file* file, void* buf, long len);
+int  vfs_mkdir(const char* pathname);
+int  vfs_mount(const char* target, const char* filesystem);
+int  vfs_chdir(const char *pathname);
 long vfs_lseek64(struct file *file, long offset, int whence);
+
+int vfs_mknod(const char* pathname, int mode, int dev);
+int vfs_register_device(struct file_operations *device_fop);
 
 void vfs_walk_recursive(struct inode *dir_node, const char *pathname, struct inode **target, char *target_name);
 

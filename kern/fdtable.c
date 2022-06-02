@@ -1,7 +1,16 @@
 #include "kern/fdtable.h"
+#include "fs/vfs.h"
 
 void fd_init(struct files_struct *files_struct) {
+    struct file *stdio_fh;
     bitmap_zero(files_struct->fd_bitmap, MAX_OPEN_FD);
+
+    // open /dev/uart as stdin (fd 0), stdout (fd 1), and stderr (fd 2)
+    vfs_open("/dev/uart", 0, &stdio_fh);
+    files_struct->fd_array[0] = stdio_fh;
+    files_struct->fd_array[1] = stdio_fh;
+    files_struct->fd_array[2] = stdio_fh;
+
     for (int i=3 ; i<MAX_OPEN_FD ; i++) 
         __set_bit(i, files_struct->fd_bitmap);
 }

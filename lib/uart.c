@@ -4,7 +4,7 @@
 #include "peripheral/interrupt.h"
 #include "string.h"
 
-#define MAX_BUFFER_SIZE 1024
+#define MAX_BUFFER_SIZE 4096
 
 // If this bit is set the interrupt line is asserted whenever the transmit FIFO is empty.
 #define ENABLE_TX_INT   (*AUX_MU_IER |= 2)
@@ -56,6 +56,8 @@ void uart_init() {
     // spec p.12, enable rx interrupt
     *AUX_MU_IER |= 1;
 
+    memset(read_buffer, 0, MAX_BUFFER_SIZE);
+    memset(write_buffer, 0, MAX_BUFFER_SIZE);
     uart_sync_puts("UART initialized successfully!\n");
 }
 
@@ -73,9 +75,11 @@ void uart_int_handler() {
     int tx = *AUX_MU_IIR & 0b10;
     int rx = *AUX_MU_IIR & 0b100;
     if (rx) {
-        r = (char)(*AUX_MU_IO);
-        read_buffer[read_end] = r;
-        read_end = (read_end + 1) % MAX_BUFFER_SIZE;
+        while(*AUX_MU_LSR & 0x01) {
+            r = (char)(*AUX_MU_IO); 
+            read_buffer[read_end] = r;
+            read_end = (read_end + 1) % MAX_BUFFER_SIZE;
+        }
     }
     if (tx) {
         while(*AUX_MU_LSR & 0x20) {
@@ -85,6 +89,10 @@ void uart_int_handler() {
             }
             *AUX_MU_IO = write_buffer[write_start];
             write_start = (write_start + 1) % MAX_BUFFER_SIZE;
+            // To ensure finished shifting out the last bit.
+            while(!(*AUX_MU_LSR & 0b1000000)) {
+                asm volatile("nop");
+            }
         }
     }
     uart_enable_int();

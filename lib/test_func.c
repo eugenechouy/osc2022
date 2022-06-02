@@ -69,6 +69,12 @@ void fs_test() {
     }
 }
 
+void fs_uart_test() {
+    int fd = open("/dev/uart", 0);
+    write(fd, "Hi", 2);
+    write(fd, "Hi l\n", 5);
+}
+
 void initramfs_test() {
     char buf[8];
     int fd = open("/initramfs/dir1/file3.txt", 0);
