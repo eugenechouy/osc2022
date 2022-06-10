@@ -67,6 +67,18 @@ void fs_test() {
         printf("error3\n");
         return;
     }
+
+    fd = open("/boot/FILE1.", 0);
+    read(fd, buf, 3);
+    printf("%s", buf);
+    read(fd, buf, 3);
+    printf("%s", buf);
+
+    fd = open("/boot/TESTDIR./FILE2.", 0);
+    read(fd, buf, 3);
+    printf("%s", buf);
+    read(fd, buf, 3);
+    printf("%s", buf);
 }
 
 void fs_uart_test() {

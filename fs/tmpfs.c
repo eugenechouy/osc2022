@@ -179,6 +179,7 @@ struct inode* tmpfs_create_inode(struct dentry *dentry, unsigned int type, unsig
 struct dentry* tmpfs_create_dentry(struct dentry *parent, const char *name, unsigned int type, unsigned int flags) {
     struct dentry *dentry = (struct dentry *)kmalloc(sizeof(struct dentry));
     strcpy(dentry->d_name, name);
+    dentry->d_cached = 1; // always true for tmpfs
     dentry->d_parent = parent;
     dentry->d_inode  = tmpfs_create_inode(dentry, type, flags);
     // dentry->d_op     = tmpfs_dop;

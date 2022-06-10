@@ -10,6 +10,39 @@
 #include "startup_alloc.h"
 #include "syscall.h"
 #include "string.h"
+#include "fs/vfs.h"
+#include "fs/fat32.h"
+#include "drivers/sdhost.h"
+#include "drivers/mbr.h"
+
+void sd_mount() {
+    struct fat32_boot_sector fat32_bs;
+    struct mbr mbr;
+
+    sd_init();
+    readblock(0, &mbr);
+
+    if (mbr.mbr_signature != MBR_SIGNATURE) {
+        kprintf("sdcard mbr signature error: %x\n", mbr.mbr_signature);
+        return;
+    }
+
+    if (mbr.partition[0].partition_type == 0xB) {
+        readblock(mbr.partition[0].first_sector_lba, &fat32_bs);
+
+        fat32_info.sec_size  = fat32_bs.BPB_BytsPerSec;
+        fat32_info.clus_size = fat32_bs.BPB_SecPerClus;
+        fat32_info.first_lba = mbr.partition[0].first_sector_lba;
+        fat32_info.fat_lba   = mbr.partition[0].first_sector_lba + fat32_bs.BPB_RsvdSecCnt;
+        fat32_info.fat_num   = fat32_bs.BPB_NumFATs;
+        fat32_info.fat_size  = fat32_bs.BPB_FATSz32;
+        fat32_info.data_lba  = mbr.partition[0].first_sector_lba + fat32_bs.BPB_RsvdSecCnt + (fat32_bs.BPB_NumFATs * fat32_bs.BPB_FATSz32);
+        fat32_info.root_clus = fat32_bs.BPB_RootClus;
+        
+        vfs_mkdir("/boot");
+        vfs_mount("/boot", "fat32");
+    }
+}
 
 void hw_info() {
     unsigned int result[2];
@@ -59,8 +92,8 @@ void idle_task() {
 }
 
 void initramfs_init() {
-    mkdir("/initramfs", 0);
-    mount(0, "/initramfs", "initramfs", 0, 0);
+    vfs_mkdir("/initramfs");
+    vfs_mount("/initramfs", "initramfs");
 }
 
 #include "test_func.h"
@@ -88,6 +121,8 @@ void kern_main() {
     reserve_memory();
 
     initramfs_init();
+    sd_mount();
+    fs_test();
     
     thread_create(user_prog);
     // privilege_task_create(kill_zombies, 10);

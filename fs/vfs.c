@@ -1,6 +1,7 @@
 #include "fs/vfs.h"
 #include "fs/tmpfs.h"
 #include "fs/uartfs.h"
+#include "fs/fat32.h"
 #include "string.h"
 #include "kern/kio.h"
 #include "kern/sched.h"
@@ -42,6 +43,11 @@ void vfs_walk_recursive(struct inode *dir_node, const char *pathname, struct ino
     struct list_head *ptr;
     struct dentry    *dentry;
     int i = 0;
+
+    if (dir_node->i_dentry->d_cached == 0) {
+        dir_node->i_dentry->d_op->read(dir_node->i_dentry);
+    }
+
     while(pathname[i]) {
         if (pathname[i] == '/')
             break;
@@ -196,18 +202,19 @@ int vfs_mount(const char* target, const char* filesystem) {
     }
     
     if (!strcmp(filesystem, "tmpfs")) {
-        mt = (struct mount *)kmalloc(sizeof(struct mount));
         fs = tmpfs_get_filesystem();
-        fs->setup_mount(fs, mt);
-        mountpoint->i_dentry->d_mount = mt;
-        mt->root->d_parent = mountpoint->i_dentry->d_parent;
     } else if (!strcmp(filesystem, "initramfs")) {
-        mt = (struct mount *)kmalloc(sizeof(struct mount));
         fs = initramfs_get_filesystem();
-        fs->setup_mount(fs, mt);
-        mountpoint->i_dentry->d_mount = mt;
-        mt->root->d_parent = mountpoint->i_dentry->d_parent;
+    } else if (!strcmp(filesystem, "fat32")) {
+        fs = fat32_get_filesystem();
+    } else {
+        kprintf("Unsupported filesystem: %s\n", filesystem);
+        return -3;
     }
+    mt = (struct mount *)kmalloc(sizeof(struct mount));
+    fs->setup_mount(fs, mt);
+    mountpoint->i_dentry->d_mount = mt;
+    mt->root->d_parent = mountpoint->i_dentry->d_parent;
     return 0;
 }
 

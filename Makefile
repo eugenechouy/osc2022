@@ -15,6 +15,7 @@ SRCS   := $(wildcard kern/*.S)
 SRCS   += $(wildcard kern/*.c)
 SRCS   += $(wildcard lib/*.c)
 SRCS   += $(wildcard fs/*.c)
+SRCS   += $(wildcard drivers/*.c)
 SRCS   := $(notdir $(SRCS))
 OBJS   := $(patsubst %.c, $(OUT_DIR)/%_c.o, $(SRCS))
 OBJS   := $(patsubst %.S, $(OUT_DIR)/%_s.o, $(OBJS))
@@ -39,8 +40,11 @@ $(OUT_DIR)/%_c.o: kern/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 $(OUT_DIR)/%_c.o: fs/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
+$(OUT_DIR)/%_c.o: drivers/%.c $(OUT_DIR)
+	$(CC) $(CFLAGS) $< -o $@
 $(OUT_DIR)/%_c.o: lib/%.c $(OUT_DIR)
 	$(CC) $(CFLAGS) $< -o $@
+
 
 $(OUT_DIR):  
 	@mkdir -p $(OUT_DIR)
@@ -52,6 +56,8 @@ debug: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio -S -s
 run: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio
+run-sd: $(IMG)
+	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -display none -serial null -serial stdio -initrd initramfs.cpio -drive if=sd,file=sfn_nctuos.img,format=raw
 run-display: $(IMG)
 	qemu-system-aarch64 -M raspi3 -kernel $(IMG) -serial null -serial stdio -initrd initramfs.cpio
 clean:

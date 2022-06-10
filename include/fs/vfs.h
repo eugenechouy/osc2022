@@ -30,6 +30,7 @@ struct inode {
 
 struct dentry {         
     char                     d_name[32];
+    char                     d_cached;   // whether the contents of directory is in memory 
     struct dentry            *d_parent;
     struct inode             *d_inode;
     struct dentry_operations *d_op;
@@ -74,6 +75,7 @@ struct inode_operations {
 };
 
 struct dentry_operations {
+    int (*read)(struct dentry *dentry);
 };
 
 extern struct mount* rootfs;
