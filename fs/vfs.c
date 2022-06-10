@@ -18,16 +18,8 @@ int    device_id;
 struct file_operations *device_files[MAX_DEVICE_FILE];
 
 
-int register_filesystem(struct filesystem* fs) {
-    if (!strcmp(fs->name, "tmpfs")) {
-        return tmpfs_register();
-    }
-    return -1;
-}
-
 void rootfs_init() {
     struct filesystem *tmpfs = tmpfs_get_filesystem();
-    register_filesystem(tmpfs);
 
     rootfs = (struct mount *)kmalloc(sizeof(struct mount));
     tmpfs->setup_mount(tmpfs, rootfs);
@@ -103,6 +95,7 @@ struct file* create_fh(struct inode *file_node) {
     fh->inode = file_node;
     fh->f_pos = 0;
     fh->fop   = file_node->i_fop;
+    fh->cur_clus = 1; // cluster number start with 2
     return fh;
 }
 

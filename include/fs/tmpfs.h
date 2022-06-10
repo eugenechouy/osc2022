@@ -9,7 +9,6 @@ struct initramfs_inode {
     char *data;
 };
 
-int tmpfs_register();
 struct filesystem* tmpfs_get_filesystem();
 struct filesystem* initramfs_get_filesystem();
 

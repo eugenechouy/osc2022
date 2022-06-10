@@ -39,11 +39,15 @@ struct dentry {
     struct list_head         d_subdirs;
 };
 
+/*
+    f_pos and cur_clus should be sync
+*/
 struct file {
     struct inode* inode;
     long f_pos;  // RW position of this file handle
     struct file_operations* fop;
     int flags;
+    unsigned int cur_clus; // current cluster number (FAT)
 };
 
 

@@ -3,13 +3,6 @@
 #include "kern/slab.h"
 #include "string.h"
 
-struct inode_operations *tmpfs_iop;
-struct file_operations  *tmpfs_fop;
-struct dentry_opartions *tmpfs_dop;
-
-struct inode_operations *initramfs_iop;
-struct file_operations  *initramfs_fop;
-
 struct inode* tmpfs_create_inode(struct dentry *dentry, unsigned int type, unsigned int flags);
 struct dentry* tmpfs_create_dentry(struct dentry *parent, const char *name, unsigned int type, unsigned int flags);
 
@@ -45,6 +38,13 @@ int tmpfs_mkdir(struct inode* dir_node, struct inode** target, const char* compo
     return 0;
 }
 
+struct inode_operations tmpfs_iop = {
+    .lookup = tmpfs_lookup,
+    .create = tmpfs_create,
+    .mkdir  = tmpfs_mkdir,
+};
+
+
 int initramfs_create(struct inode* dir_node, struct inode** target, const char* component_name) {
     return -1;
 }
@@ -52,6 +52,25 @@ int initramfs_create(struct inode* dir_node, struct inode** target, const char* 
 int initramfs_mkdir(struct inode* dir_node, struct inode** target, const char* component_name) {
     return -1;
 }
+
+struct inode_operations initramfs_iop = {
+    .lookup = tmpfs_lookup,
+    .create = initramfs_create,
+    .mkdir  = initramfs_mkdir,    
+};
+
+
+/*
+    dentry operation
+*/
+int tmpfs_read_dentry(struct dentry *dentry) {
+    return 0;
+}
+
+struct dentry_operations tmpfs_dop = {
+    .read = tmpfs_read_dentry,
+};
+
 
 /*
     file operation
@@ -103,6 +122,14 @@ long tmpfs_lseek64(struct file* file, long offset, int whence) {
     }
     return file->f_pos;
 }
+
+struct file_operations tmpfs_fop = {
+    .write   = tmpfs_write,
+    .read    = tmpfs_read,
+    .open    = tmpfs_open,
+    .close   = tmpfs_close,
+    .lseek64 = tmpfs_lseek64,
+};
  
 int initramfs_write(struct file *file, const void *buf, long len) {
     return 0;
@@ -122,32 +149,14 @@ int initramfs_read(struct file *file, void *buf, long len) {
     return bi;
 }
 
+struct file_operations initramfs_fop = {
+    .write   = initramfs_write,
+    .read    = initramfs_read,
+    .open    = tmpfs_open,
+    .close   = tmpfs_close,
+    .lseek64 = tmpfs_lseek64,
+};
 
-int tmpfs_register() {
-    tmpfs_iop = (struct inode_operations *)kmalloc(sizeof(struct inode_operations));
-    tmpfs_iop->lookup = tmpfs_lookup;
-    tmpfs_iop->create = tmpfs_create;
-    tmpfs_iop->mkdir  = tmpfs_mkdir;
-    tmpfs_fop = (struct file_operations *)kmalloc(sizeof(struct file_operations));
-    tmpfs_fop->write   = tmpfs_write;
-    tmpfs_fop->read    = tmpfs_read;
-    tmpfs_fop->open    = tmpfs_open;
-    tmpfs_fop->close   = tmpfs_close;
-    tmpfs_fop->lseek64 = tmpfs_lseek64;
-    tmpfs_dop = 0;
-
-    initramfs_iop = (struct inode_operations *)kmalloc(sizeof(struct inode_operations));
-    initramfs_iop->lookup = tmpfs_lookup;
-    initramfs_iop->create = initramfs_create;
-    initramfs_iop->mkdir  = initramfs_mkdir;
-    initramfs_fop = (struct file_operations *)kmalloc(sizeof(struct file_operations));
-    initramfs_fop->write   = initramfs_write;
-    initramfs_fop->read    = initramfs_read;
-    initramfs_fop->open    = tmpfs_open;
-    initramfs_fop->close   = tmpfs_close;
-    initramfs_fop->lseek64 = tmpfs_lseek64;
-    return 0;
-}
 
 int tmpfs_setup_mount(struct filesystem *fs, struct mount *mount) {
     mount->fs   = fs;
@@ -167,8 +176,8 @@ struct filesystem* tmpfs_get_filesystem() {
 
 struct inode* tmpfs_create_inode(struct dentry *dentry, unsigned int type, unsigned int flags) {
     struct inode *inode = (struct inode *)kmalloc(sizeof(struct inode));
-    inode->i_op     = tmpfs_iop;
-    inode->i_fop    = tmpfs_fop;
+    inode->i_op     = &tmpfs_iop;
+    inode->i_fop    = &tmpfs_fop;
     inode->i_dentry = dentry;
     inode->i_flags  = flags;
     inode->i_type   = type;
@@ -182,7 +191,7 @@ struct dentry* tmpfs_create_dentry(struct dentry *parent, const char *name, unsi
     dentry->d_cached = 1; // always true for tmpfs
     dentry->d_parent = parent;
     dentry->d_inode  = tmpfs_create_inode(dentry, type, flags);
-    // dentry->d_op     = tmpfs_dop;
+    dentry->d_op     = &tmpfs_dop;
     dentry->d_mount  = 0;
     INIT_LIST_HEAD(&dentry->d_child);
     INIT_LIST_HEAD(&dentry->d_subdirs);
@@ -210,8 +219,8 @@ void initramfs_init_create(struct inode *root_node, const char *pathname, char *
     new_dentry = tmpfs_create_dentry(dir_node->i_dentry, filename, I_FILE, I_FRO);
     new_dentry->d_inode->internal = initramfs_internal;
     new_dentry->d_inode->i_size   = filesize;
-    new_dentry->d_inode->i_fop    = initramfs_fop;
-    new_dentry->d_inode->i_op     = initramfs_iop;
+    new_dentry->d_inode->i_fop    = &initramfs_fop;
+    new_dentry->d_inode->i_op     = &initramfs_iop;
 }
 
 void initramfs_init_mkdir(struct inode *root_node, const char *pathname) {
@@ -221,8 +230,8 @@ void initramfs_init_mkdir(struct inode *root_node, const char *pathname) {
 
     vfs_walk_recursive(root_node, pathname, &dir_node, dirname);
     new_dentry = tmpfs_create_dentry(dir_node->i_dentry, dirname, I_DIRECTORY, I_FRO);
-    new_dentry->d_inode->i_fop    = initramfs_fop;
-    new_dentry->d_inode->i_op     = initramfs_iop;
+    new_dentry->d_inode->i_fop    = &initramfs_fop;
+    new_dentry->d_inode->i_op     = &initramfs_iop;
 }
 
 int initramfs_setup_mount(struct filesystem *fs, struct mount *mount) {
@@ -234,8 +243,8 @@ int initramfs_setup_mount(struct filesystem *fs, struct mount *mount) {
     
     mount->fs = fs;
     mount->root = tmpfs_create_dentry(0, "/", I_DIRECTORY, I_FRO);
-    mount->root->d_inode->i_fop = initramfs_fop;
-    mount->root->d_inode->i_op  = initramfs_iop;
+    mount->root->d_inode->i_fop = &initramfs_fop;
+    mount->root->d_inode->i_op  = &initramfs_iop;
     
     for ( ; ; i+=namesize+filesize) {
         header = ((struct cpio_newc_header *)(CPIO_ADDRESS + i));

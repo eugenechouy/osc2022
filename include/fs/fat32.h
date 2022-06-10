@@ -53,7 +53,6 @@ struct fat32_info {
 
 struct fat32_internal {
     unsigned int cluster;
-    unsigned int cur_clus;
 };
 
 // file allocation table

@@ -1,6 +1,7 @@
 #include "fs/vfs.h"
 #include "fs/fat32.h"
 #include "kern/slab.h"
+#include "kern/kio.h"
 #include "string.h"
 
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
@@ -85,7 +86,7 @@ int fat32_read_dentry(struct dentry *dentry) {
         if (dentry_list[i].DIR_Name[0] == FAT32_DIR_ENTRY_UNUSED)
             continue;
         
-        if (dentry_list[i].DIR_Attr & FAT32_DIR_ENTRY_ATTR_LONG_NAME_MASK == FAT32_DIR_ENTRY_ATTR_LONG_NAME) {
+        if ((dentry_list[i].DIR_Attr & FAT32_DIR_ENTRY_ATTR_LONG_NAME_MASK) == FAT32_DIR_ENTRY_ATTR_LONG_NAME) {
             // kprintf("LFN\n");
             continue;
         } else
@@ -102,7 +103,6 @@ int fat32_read_dentry(struct dentry *dentry) {
         
         fat32_internal = (struct fat32_internal*)kmalloc(sizeof(struct fat32_internal));
         fat32_internal->cluster  = ((dentry_list[i].DIR_FstClusHI << 16) | (dentry_list[i].DIR_FstClusLO));
-        fat32_internal->cur_clus = fat32_internal->cluster;
         new_dentry->d_inode->i_size   = dentry_list[i].DIR_FileSize;
         new_dentry->d_inode->internal = fat32_internal;
     }
@@ -139,12 +139,18 @@ int fat32_read(struct file *file, void *buf, long len) {
     unsigned long j;
     unsigned long offset;
     unsigned long end;
+    unsigned int cur_clus;
     unsigned int *fat;
     unsigned char buffer[BLOCK_SIZE];
     char *dest = (char*)buf;
 
-    while(len > 0 && i < size && fat32_internal->cur_clus < FAT32_ENTRY_RESERVED_TO_END) {
-        readblock(clus_2_lba(fat32_internal->cur_clus), buffer);
+    if (file->cur_clus == 1)
+        cur_clus = fat32_internal->cluster;
+    else
+        cur_clus = file->cur_clus;
+
+    while(len > 0 && i < size && cur_clus < FAT32_ENTRY_RESERVED_TO_END) {
+        readblock(clus_2_lba(cur_clus), buffer);
         // data range in this block
         offset = file->f_pos % BLOCK_SIZE;
         end    = MIN(BLOCK_SIZE, offset + len);
@@ -159,11 +165,12 @@ int fat32_read(struct file *file, void *buf, long len) {
         i           += BLOCK_SIZE;
         if (len) {
             // lookup FAT
-            readblock(fat_lba(fat32_internal->cur_clus), buffer);
+            readblock(fat_lba(cur_clus), buffer);
             fat = (unsigned int *)buffer;
-            fat32_internal->cur_clus = fat[fat32_internal->cur_clus % FAT32_ENTRY_PER_SECT];
+            cur_clus = fat[cur_clus % FAT32_ENTRY_PER_SECT];
         }
     }
+    file->cur_clus = cur_clus;
 
     return bi;
 }
@@ -191,7 +198,6 @@ int fat32_setup_mount(struct filesystem *fs, struct mount *mount) {
         kprintf("Warning: fat32 root cluster number differed.\n");
     
     fat32_internal->cluster  = fat32_info.root_clus;
-    fat32_internal->cur_clus = fat32_internal->cluster;
     mount->root->d_inode->internal = fat32_internal;
     return 0;
 }

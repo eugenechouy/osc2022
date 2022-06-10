@@ -81,7 +81,7 @@ void reserve_memory() {
 }
 
 void user_prog() {
-    exec("/initramfs/vfs1.img", 0);
+    exec("/initramfs/vfs2.img", 0);
     exit();
 }
 
@@ -122,7 +122,8 @@ void kern_main() {
 
     initramfs_init();
     sd_mount();
-    fs_test();
+    // fs_test();
+    // fat_test();
     
     thread_create(user_prog);
     // privilege_task_create(kill_zombies, 10);

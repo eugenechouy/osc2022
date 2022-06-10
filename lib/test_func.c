@@ -67,8 +67,11 @@ void fs_test() {
         printf("error3\n");
         return;
     }
+}
 
-    fd = open("/boot/FILE1.", 0);
+void fat_test() {
+    char buf[100];
+    int fd = open("/boot/FILE1.", 0);
     read(fd, buf, 3);
     printf("%s", buf);
     read(fd, buf, 3);
@@ -79,6 +82,11 @@ void fs_test() {
     printf("%s", buf);
     read(fd, buf, 3);
     printf("%s", buf);
+
+    fd = open("/boot/FAT_R.TXT", 0);
+    read(fd, buf, 64);
+    printf("%s", buf);
+    close(fd);
 }
 
 void fs_uart_test() {

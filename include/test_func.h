@@ -3,6 +3,7 @@
 
 void fork_test();
 void fs_test();
+void fat_test();
 void fs_uart_test();
 void initramfs_test();
 
