@@ -32,6 +32,8 @@ void sigkill(int pid, int SIGNAL);
 #define SYS_CHDIR       17
 #define SYS_LSEEK64     18
 
+#define SYS_SYNC        20
+
 #define O_CREAT 00000100
 
 int open(const char *pathname, int flags);
@@ -41,6 +43,7 @@ long read(int fd, void *buf, unsigned long count);
 int mkdir(const char *pathname, unsigned mode);
 int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
 int chdir(const char *path);
+void sync();
 
 #define SEEK_SET 0
 #define SEEK_CUR 1

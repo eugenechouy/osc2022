@@ -189,6 +189,10 @@ inline void sys_lseek64(struct trapframe *trapframe) {
     trapframe->x[0] = vfs_lseek64(fh, offset, whence);
 }
 
+inline void sys_sync(struct trapframe *trapframe) {
+    vfs_sync();
+}
+
 void syscall_main(struct trapframe *trapframe) {
     int_enable();
     long syscall_num = trapframe->x[8];
@@ -246,6 +250,9 @@ void syscall_main(struct trapframe *trapframe) {
             break;
         case SYS_LSEEK64:
             sys_lseek64(trapframe);
+            break;
+        case SYS_SYNC:
+            sys_sync(trapframe);
             break;
         case 30:
             sys_sigreturn(trapframe);

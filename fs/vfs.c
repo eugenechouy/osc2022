@@ -6,6 +6,7 @@
 #include "kern/kio.h"
 #include "kern/sched.h"
 #include "kern/slab.h"
+#include "kern/pagecache.h"
 
 struct mount* rootfs;
 
@@ -115,7 +116,7 @@ int vfs_open(const char *pathname, int flags, struct file **target) {
         *target = create_fh(file_node);
         return 0;
     } 
-    kprintf("%s not found under %s\n", pathname, dir_node->i_dentry->d_name);
+    // kprintf("%s not found under %s\n", pathname, dir_node->i_dentry->d_name);
     
     if (flags & O_CREAT) {
         if (dir_node->i_flags == I_FRO) 
@@ -255,4 +256,8 @@ int vfs_register_device(struct file_operations *device_fop) {
         return -1;
     device_files[device_id] = device_fop;
     return device_id++;
+}
+
+void vfs_sync() {
+    pagecache_write_back();
 }

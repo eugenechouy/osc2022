@@ -66,18 +66,12 @@ struct fat32_info {
     unsigned int   root_clus;
 
     unsigned int   fsi_next_free;
+    unsigned int   total_sec;
 };
-
-// cache file allocation table
-struct fat32_table {
-    void *data;
-};
-
 
 // cache one sector in memory
 struct fat32_inode {
     unsigned int  cluster;
-    unsigned char data[BLOCK_SIZE];
 };
 
 // file allocation table

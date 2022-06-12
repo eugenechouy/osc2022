@@ -94,6 +94,7 @@ int  vfs_mkdir(const char* pathname);
 int  vfs_mount(const char* target, const char* filesystem);
 int  vfs_chdir(const char *pathname);
 long vfs_lseek64(struct file *file, long offset, int whence);
+void vfs_sync();
 
 int vfs_mknod(const char* pathname, int mode, int dev);
 int vfs_register_device(struct file_operations *device_fop);

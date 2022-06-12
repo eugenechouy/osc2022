@@ -1,6 +1,12 @@
 #ifndef PAGECACHE_H
 #define PAGECACHE_H
 
-void pagecache_init();
+#include "list.h"
+
+void  pagecache_init();
+
+void* pagecache_read(int lba);
+void  pagecache_dirty(int lba);
+void  pagecache_write_back();
 
 #endif

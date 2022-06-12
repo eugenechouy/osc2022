@@ -2,12 +2,12 @@
 #include "fs/fat32.h"
 #include "kern/slab.h"
 #include "kern/kio.h"
+#include "kern/pagecache.h"
 #include "string.h"
 
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 
 struct fat32_info fat32_info = {0};
-struct fat32_table *fat_cache;
 
 #define clus_2_lba(cluster) (fat32_info.data_lba + (cluster - fat32_info.root_clus) * fat32_info.clus_size)
 #define fat_lba(cluster)    (fat32_info.fat_lba + (cluster / FAT32_ENTRY_PER_SECT))
@@ -56,25 +56,6 @@ void to_sfn(unsigned char *name, unsigned char *ext, const char *source) {
     while (i < 3) ext[i++] = ' ';
 }
 
-void* readfat(unsigned int clus) {
-    kprintf("readfat\n");
-    if (fat_cache[fat_idx(clus)].data == 0) {
-        void *ret = kmalloc(BLOCK_SIZE);
-        readblock(fat_lba(clus), ret);
-        fat_cache[fat_idx(clus)].data = ret;
-    }
-    return fat_cache[fat_idx(clus)].data;
-}
-
-void writefat(unsigned int clus) {
-    if (fat_cache[fat_idx(clus)].data == 0) {
-        kprintf("Try to write uncache fat\n");
-        return;
-    }
-    writeblock(fat_lba(clus), fat_cache[fat_idx(clus)].data);
-}
-
-
 struct inode* fat32_create_inode(struct dentry *dentry, unsigned int type, unsigned int flags);
 struct dentry* fat32_create_dentry(struct dentry *parent, const char *name, unsigned int type, unsigned int flags);
 
@@ -114,7 +95,7 @@ int fat32_create(struct inode* dir_node, struct inode** target, const char* comp
 
     // Find an empty entry in the FAT table.
     while(file_first_clus == 1) {
-        fat = readfat(clus);
+        fat = pagecache_read(fat_lba(clus));
         for (i=(clus%FAT32_ENTRY_PER_SECT) ; i<FAT32_ENTRY_PER_SECT ; i++, clus++) {
             if (fat[i] == FAT32_ENTRY_FREE) {
                 fat[i] = FAT32_ENTRY_ALLOCATED_AND_END_OF_FILE;
@@ -124,10 +105,10 @@ int fat32_create(struct inode* dir_node, struct inode** target, const char* comp
             }
         }
     }
-    writefat(clus);
+    pagecache_dirty(fat_lba(clus));
     
     // Find an empty directory entry in the target directory.
-    dentry_list = (struct fat32_dir_entry *)fat32_internal->data;
+    dentry_list = (struct fat32_dir_entry *)pagecache_read(clus_2_lba(fat32_internal->cluster));
     unused_entry = -1;
     for(i=0 ; dentry_list[i].DIR_Name[0]!=FAT32_DIR_ENTRY_LAST_AND_UNUSED && i<FAT32_DIR_ENTRY_PRT_SEC ; i++) {
         if (dentry_list[i].DIR_Name[0] == FAT32_DIR_ENTRY_UNUSED && unused_entry == -1) {
@@ -136,7 +117,6 @@ int fat32_create(struct inode* dir_node, struct inode** target, const char* comp
         }
         
         if ((dentry_list[i].DIR_Attr & FAT32_DIR_ENTRY_ATTR_LONG_NAME_MASK) == FAT32_DIR_ENTRY_ATTR_LONG_NAME) {
-            kprintf("LFN\n");
             continue;
         } else
             get_sfn(dentry_list[i].DIR_Name, dentry_list[i].DIR_Ext, filename);
@@ -159,6 +139,7 @@ int fat32_create(struct inode* dir_node, struct inode** target, const char* comp
     dentry_list[unused_entry].DIR_FstClusHI = file_first_clus & 0xffff0000;
     dentry_list[unused_entry].DIR_FstClusLO = file_first_clus & 0x0000ffff;
     dentry_list[unused_entry].DIR_FileSize  = 0;
+    pagecache_dirty(clus_2_lba(fat32_internal->cluster));
 
     // in-memory inode tree
     fat32_internal = (struct fat32_inode*)kmalloc(sizeof(struct fat32_inode));
@@ -191,9 +172,7 @@ int fat32_read_dentry(struct dentry *dentry) {
     struct fat32_dir_entry *dentry_list;
     struct fat32_inode     *fat32_internal = (struct fat32_inode*)dentry->d_inode->internal;
     
-    readblock(clus_2_lba(fat32_internal->cluster), fat32_internal->data);
-
-    dentry_list = (struct fat32_dir_entry *)fat32_internal->data;
+    dentry_list = (struct fat32_dir_entry *)pagecache_read(clus_2_lba(fat32_internal->cluster));
     for(i=0 ; dentry_list[i].DIR_Name[0]!=FAT32_DIR_ENTRY_LAST_AND_UNUSED && i<FAT32_DIR_ENTRY_PRT_SEC ; i++) {
         if (dentry_list[i].DIR_Name[0] == FAT32_DIR_ENTRY_UNUSED)
             continue;
@@ -218,17 +197,16 @@ int fat32_read_dentry(struct dentry *dentry) {
         new_dentry->d_inode->internal = fat32_internal;
     }
     dentry->d_cached = 1;
-
     return 0;
 }
 
-int fat32_lookup_dentry(struct dentry *dentry, struct fat32_dir_entry **target, const char *component_name) {
+int fat32_update_dentry(struct dentry *dentry, const char *component_name, unsigned int filesize) {
     int i;
     char filename[13];
     struct fat32_dir_entry *dentry_list;
     struct fat32_inode     *fat32_internal = (struct fat32_inode*)dentry->d_inode->internal;
 
-    dentry_list = (struct fat32_dir_entry *)fat32_internal->data;
+    dentry_list = (struct fat32_dir_entry *)pagecache_read(clus_2_lba(fat32_internal->cluster));
     for(i=0 ; dentry_list[i].DIR_Name[0]!=FAT32_DIR_ENTRY_LAST_AND_UNUSED && i<FAT32_DIR_ENTRY_PRT_SEC ; i++) {
         if (dentry_list[i].DIR_Name[0] == FAT32_DIR_ENTRY_UNUSED)
             continue;
@@ -240,18 +218,14 @@ int fat32_lookup_dentry(struct dentry *dentry, struct fat32_dir_entry **target, 
             get_sfn(dentry_list[i].DIR_Name, dentry_list[i].DIR_Ext, filename);
 
         if (!strcmp(filename, component_name)) {
-            *target = &dentry_list[i];
+            kprintf("extend file %d -> %d\n", dentry_list[i].DIR_FileSize, filesize);
+            dentry_list[i].DIR_FileSize = filesize;
+            pagecache_dirty(clus_2_lba(fat32_internal->cluster));
             return 0;
         }
     }
     kprintf("dentry lookup not found\n");
     return -1;
-}
-
-int fat32_write_dentry(struct dentry *dentry) {
-    struct fat32_inode *fat32_internal = (struct fat32_inode*)dentry->d_inode->internal;
-    writeblock(clus_2_lba(fat32_internal->cluster), fat32_internal->data);
-    return 0;
 }
 
 struct dentry_operations fat32_dop = {
@@ -277,8 +251,7 @@ int fat32_write(struct file *file, const void *buf, long len) {
     unsigned long offset;
     unsigned long end;
     unsigned int cur_clus;
-    struct fat32_dir_entry *dir_entry;
-    unsigned char buffer[BLOCK_SIZE];
+    unsigned char *buffer;
     char *src = (char*)buf;
 
     if (file->cur_clus == 1)
@@ -287,7 +260,7 @@ int fat32_write(struct file *file, const void *buf, long len) {
         cur_clus = file->cur_clus;
 
     while(len > 0 && cur_clus < FAT32_ENTRY_RESERVED_TO_END) {
-        readblock(clus_2_lba(cur_clus), buffer);
+        buffer = pagecache_read(clus_2_lba(cur_clus));
         // data range in this block
         offset = file->f_pos % BLOCK_SIZE;
         end    = MIN(BLOCK_SIZE, offset + len);
@@ -295,7 +268,7 @@ int fat32_write(struct file *file, const void *buf, long len) {
             buffer[j] = src[bi];
             bi++;
         }
-        writeblock(clus_2_lba(cur_clus), buffer);
+        pagecache_dirty(clus_2_lba(cur_clus));
         file->f_pos += (end - offset);
         len         -= (end - offset);
         if (len) {
@@ -307,10 +280,7 @@ int fat32_write(struct file *file, const void *buf, long len) {
     file->cur_clus = cur_clus;
     if (file->f_pos > file->inode->i_size) {
         file->inode->i_size = file->f_pos;
-        fat32_lookup_dentry(file->inode->i_dentry->d_parent, &dir_entry, file->inode->i_dentry->d_name);
-        kprintf("extend file %d -> %d\n", dir_entry->DIR_FileSize, file->inode->i_size);
-        dir_entry->DIR_FileSize = file->inode->i_size;
-        fat32_write_dentry(file->inode->i_dentry->d_parent);
+        fat32_update_dentry(file->inode->i_dentry->d_parent, file->inode->i_dentry->d_name, file->inode->i_size);
     }
     return bi;
 }
@@ -325,7 +295,7 @@ int fat32_read(struct file *file, void *buf, long len) {
     unsigned long end;
     unsigned int cur_clus;
     unsigned int *fat;
-    unsigned char buffer[BLOCK_SIZE];
+    unsigned char *buffer;
     char *dest = (char*)buf;
 
     if (file->cur_clus == 1)
@@ -334,7 +304,7 @@ int fat32_read(struct file *file, void *buf, long len) {
         cur_clus = file->cur_clus;
 
     while(len > 0 && i < size && cur_clus < FAT32_ENTRY_RESERVED_TO_END) {
-        readblock(clus_2_lba(cur_clus), buffer);
+        buffer = pagecache_read(clus_2_lba(cur_clus));
         // data range in this block
         offset = file->f_pos % BLOCK_SIZE;
         end    = MIN(BLOCK_SIZE, offset + len);
@@ -351,7 +321,7 @@ int fat32_read(struct file *file, void *buf, long len) {
         i           += BLOCK_SIZE;
         if (len) {
             // lookup FAT
-            fat = readfat(cur_clus);
+            fat = pagecache_read(fat_lba(cur_clus));
             cur_clus = fat[cur_clus % FAT32_ENTRY_PER_SECT];
         }
     }
@@ -384,10 +354,6 @@ int fat32_setup_mount(struct filesystem *fs, struct mount *mount) {
     
     fat32_internal->cluster  = fat32_info.root_clus;
     mount->root->d_inode->internal = fat32_internal;
-
-    fat_cache = kmalloc(sizeof(struct fat32_table) * fat32_info.fat_num * fat32_info.fat_size);
-    memset(fat_cache, 0, sizeof(struct fat32_table) * fat32_info.fat_num * fat32_info.fat_size);
-    
     return 0;
 }
 

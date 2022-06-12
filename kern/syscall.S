@@ -105,3 +105,9 @@ lseek64:
     mov x8, #18
     svc #0
     ret
+
+.global sync
+sync:
+    mov x8, #20
+    svc #0
+    ret

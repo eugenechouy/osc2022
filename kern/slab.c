@@ -116,6 +116,9 @@ void* kmalloc(unsigned int size) {
     void *ret;
     struct page *page;
 
+    if (size == 0)
+        return 0;
+
     if (size >= PAGE_SIZE) {
         for (i=0 ; i<MAX_ORDER ; i++) {
             if (size <= PAGE_SIZE * (1 << i))

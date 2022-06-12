@@ -70,13 +70,7 @@ void fs_test() {
 }
 
 void fat_test() {
-    char buf[100];
-    int fd = open("/boot/FAT_T.TXT", 0);
-    // write(fd, "fat test\n", 9);
-
-    // fd = open("/boot/FAT_T.TXT", O_CREAT);
-    // read(fd, buf, 10);
-    // printf("%s\n", buf);
+    open("/boot/FAT_T.TXT", 0);
 }
 
 void fs_uart_test() {
