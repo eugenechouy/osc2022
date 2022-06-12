@@ -115,7 +115,7 @@ int vfs_open(const char *pathname, int flags, struct file **target) {
         *target = create_fh(file_node);
         return 0;
     } 
-    // kprintf("%s not found under %s\n", pathname, dir_node->i_dentry->d_name);
+    kprintf("%s not found under %s\n", pathname, dir_node->i_dentry->d_name);
     
     if (flags & O_CREAT) {
         if (dir_node->i_flags == I_FRO) 

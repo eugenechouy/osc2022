@@ -17,6 +17,7 @@
 
 void sd_mount() {
     struct fat32_boot_sector fat32_bs;
+    struct fat32_fsinfo_sector fat32_fsinfo;
     struct mbr mbr;
 
     sd_init();
@@ -39,6 +40,14 @@ void sd_mount() {
         fat32_info.data_lba  = mbr.partition[0].first_sector_lba + fat32_bs.BPB_RsvdSecCnt + (fat32_bs.BPB_NumFATs * fat32_bs.BPB_FATSz32);
         fat32_info.root_clus = fat32_bs.BPB_RootClus;
         
+        readblock(mbr.partition[0].first_sector_lba + fat32_bs.BPB_FSInfo, &fat32_fsinfo);
+        if (fat32_fsinfo.FSI_LeadSig == FSI_LEAD_SIG && fat32_fsinfo.FSI_StrucSig == FSI_STRUCT_SIG && fat32_fsinfo.FSI_Nxt_Free != FSI_NXT_FREE_UNKNOWN) {
+            fat32_info.fsi_next_free = fat32_fsinfo.FSI_Nxt_Free;
+        } else {
+            fat32_info.fsi_next_free = 2;
+        }
+        kprintf("FSI_Nxt_Free %d\n", fat32_info.fsi_next_free);
+
         vfs_mkdir("/boot");
         vfs_mount("/boot", "fat32");
     }
@@ -123,7 +132,7 @@ void kern_main() {
     initramfs_init();
     sd_mount();
     // fs_test();
-    // fat_test();
+    fat_test();
     
     thread_create(user_prog);
     // privilege_task_create(kill_zombies, 10);

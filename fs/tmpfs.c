@@ -85,7 +85,6 @@ int tmpfs_close(struct file *file) {
 
 int tmpfs_write(struct file *file, const void *buf, long len) {
     struct tmpfs_inode *tmpfs_internal = (struct tmpfs_inode *)file->inode->internal;
-    unsigned long size = file->inode->i_size;
     unsigned long i    = file->f_pos;
     unsigned long bi   = 0;
     char *src = (char*)buf;
@@ -94,8 +93,8 @@ int tmpfs_write(struct file *file, const void *buf, long len) {
         bi++;
     }
     file->f_pos = i;
-    if (i > size)
-        file->inode->i_size = i;
+    if (file->f_pos > file->inode->i_size)
+        file->inode->i_size = file->f_pos;
     return bi;
 }
 

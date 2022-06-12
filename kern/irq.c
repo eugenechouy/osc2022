@@ -11,6 +11,8 @@
 #define CNTPNSIRQ_INT   1
 #define GPU_INT         8
 
+#define ROUND_DOWN(n,d) ((n) & (-d))
+
 char int_stack[4096];
 
 void int_enable() {
@@ -56,7 +58,7 @@ void irq_main() {
     register char *sp;
     asm volatile("mov %0, sp": "=r"(sp));
     if (!(sp <= &int_stack[4095] && sp >= &int_stack[0])) {
-        asm volatile("mov sp, %0" : : "r"(&int_stack[4080]));
+        asm volatile("mov sp, %0" : : "r"(ROUND_DOWN((unsigned long)&int_stack[4088], 16)));
     }
     
     irq_router();

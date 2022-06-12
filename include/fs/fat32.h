@@ -24,7 +24,7 @@ struct fat32_boot_sector {
     unsigned short BPB_flags;
     unsigned short BPB_FSVer;
     unsigned int   BPB_RootClus; // Cluster number of root directory start, typically 2 (first cluster[37]) if it contains no bad sector. 
-    unsigned short BPB_FSInfo;
+    unsigned short BPB_FSInfo;   // Logical sector number of FS Information Sector, typically 1
     unsigned short BPB_BkBootSec;
     char           BPB_Reserved[12];
     unsigned char  BS_DrvNum;
@@ -37,22 +37,47 @@ struct fat32_boot_sector {
     char bootsig[2];
 } __attribute__((packed));
 
+
+#define FSI_LEAD_SIG         0x41615252
+#define FSI_STRUCT_SIG       0x61417272
+#define FSI_NXT_FREE_UNKNOWN 0xffffffff
+
+struct fat32_fsinfo_sector {
+    unsigned int FSI_LeadSig;
+    char         FSI_Reserved1[480];
+    unsigned int FSI_StrucSig;
+    unsigned int FSI_Free_Count;
+    unsigned int FSI_Nxt_Free;
+    char         FSI_Reserved2[12];
+} __attribute__((packed));
+
+
 // in-memory cache for important metadata
 struct fat32_info {
     unsigned short sec_size;
     unsigned char  clus_size; // number of sector
 
-    unsigned int  first_lba;
-    unsigned int  fat_lba;
-    unsigned char fat_num;
-    unsigned int  fat_size;
-    unsigned int  data_lba;
+    unsigned int   first_lba;
+    unsigned int   fat_lba;
+    unsigned char  fat_num;
+    unsigned int   fat_size;
+    unsigned int   data_lba;
 
-    unsigned int  root_clus;
+    unsigned int   root_clus;
+
+    unsigned int   fsi_next_free;
 };
 
-struct fat32_internal {
-    unsigned int cluster;
+// cache file allocation table
+struct fat32_table {
+    void *data;
+};
+
+
+// cache one sector in memory
+struct fat32_inode {
+    unsigned int  cluster;
+    unsigned char data[BLOCK_SIZE];
 };
 
 // file allocation table
@@ -94,6 +119,8 @@ struct fat32_dir_entry {
     unsigned short  DIR_FstClusLO;   /* First cluster number low two bytes */
     unsigned int    DIR_FileSize;    /* file size (in bytes) */
 } __attribute__((packed));
+
+#define FAT32_DIR_ENTRY_PRT_SEC (BLOCK_SIZE / sizeof(struct fat32_dir_entry)) // 16
 
 struct fat32_dir_long_entry {
     unsigned char    id;             /* sequence number for slot */

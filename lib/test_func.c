@@ -71,22 +71,12 @@ void fs_test() {
 
 void fat_test() {
     char buf[100];
-    int fd = open("/boot/FILE1.", 0);
-    read(fd, buf, 3);
-    printf("%s", buf);
-    read(fd, buf, 3);
-    printf("%s", buf);
+    int fd = open("/boot/FAT_T.TXT", 0);
+    // write(fd, "fat test\n", 9);
 
-    fd = open("/boot/TESTDIR./FILE2.", 0);
-    read(fd, buf, 3);
-    printf("%s", buf);
-    read(fd, buf, 3);
-    printf("%s", buf);
-
-    fd = open("/boot/FAT_R.TXT", 0);
-    read(fd, buf, 64);
-    printf("%s", buf);
-    close(fd);
+    // fd = open("/boot/FAT_T.TXT", O_CREAT);
+    // read(fd, buf, 10);
+    // printf("%s\n", buf);
 }
 
 void fs_uart_test() {
