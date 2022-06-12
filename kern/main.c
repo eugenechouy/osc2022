@@ -6,6 +6,7 @@
 #include "kern/kio.h"
 #include "kern/cpio.h"
 #include "kern/mm.h"
+#include "kern/pagecache.h"
 #include "dtb.h"
 #include "startup_alloc.h"
 #include "syscall.h"
@@ -130,6 +131,7 @@ void kern_main() {
     reserve_memory();
 
     initramfs_init();
+    pagecache_init();
     sd_mount();
     // fs_test();
     fat_test();

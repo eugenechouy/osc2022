@@ -32,6 +32,11 @@ struct kmem_pool* kmalloc_slab(unsigned int size) {
         pool_id = 15 + (size + 11) / 12;
     } else {
         for(pool_id=24 ; pool_id<MAX_OBJ_CACHE_NUM ; pool_id++) {
+            if (kmalloc_pools[pool_id].object_size == size)
+                return &kmalloc_pools[pool_id];
+        }
+        // first object of "size"
+        for(pool_id=24 ; pool_id<MAX_OBJ_CACHE_NUM ; pool_id++) {
             if (kmalloc_pools[pool_id].object_size == -1)
                 break;
         }
@@ -125,7 +130,7 @@ void* kmalloc(unsigned int size) {
         ret = __do_kmalloc(size);
         // kprintf("kmalloc: slab %x\n", ret);
     }
-    return (void*)PHY_2_VIRT(ret);
+    return ret == 0 ? 0 : (void*)PHY_2_VIRT(ret);
 }
 
 void kfree(void *addr) {

@@ -47,11 +47,11 @@ struct page* expand(struct page *page, unsigned int order) {
     struct page *redundant;
     unsigned int porder = page->compound_order;
     
-    if (porder > order) {
+    if (porder > order && porder > 0) {
         // kprintf("Release %d, ask for, %d\n", porder, order);
         porder--;
         redundant = page + (1 << porder);
-        page->compound_order = porder;
+        page->compound_order      = porder;
         redundant->flags          = PG_HEAD;
         redundant->compound_order = porder;
         add_to_free_area(redundant, &free_area[redundant->compound_order]);
@@ -219,7 +219,7 @@ void mm_reserve(void *start, void *end) {
     unsigned int ps = PHY_2_PFN(VIRT_2_PHY(start));
     unsigned int pe = PHY_2_PFN(VIRT_2_PHY(end));
     unsigned int pi = ps;
-    struct page page;   
+    struct page *page;   
     int i;
 
     kprintf("\tReserve 0x%x-0x%x\n", VIRT_2_PHY(start), VIRT_2_PHY(end));
@@ -231,12 +231,12 @@ void mm_reserve(void *start, void *end) {
     do {
         // find the header page of start address, linear search for now
         while(pi >= 0) {
-            page = frames[pi--];
-            if (page.flags == PG_HEAD)
+            page = &frames[pi--];
+            if (page->flags == PG_HEAD)
                 break;
         }
-        pi = page.pg_index + (1<<page.compound_order);
-        del_page_from_free_area(&page, &free_area[page.compound_order]);
-        expand_reserve(&page, ps, pe);
+        pi = page->pg_index + (1<<page->compound_order);
+        del_page_from_free_area(page, &free_area[page->compound_order]);
+        expand_reserve(page, ps, pe);
     } while(pi <= pe);
 }
