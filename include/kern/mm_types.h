@@ -45,4 +45,6 @@ struct mm_struct {
 #define VIRT_2_PHY(vaddr) ((long)(vaddr) & 0x0000ffffffffffff)
 #define PHY_2_VIRT(vaddr) ((long)(vaddr) | 0xffff000000000000)
 
+#define VIRT_CHECK(vaddr) ((long)(vaddr) & 0xffff000000000000)
+
 #endif

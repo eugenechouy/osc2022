@@ -71,7 +71,7 @@ void irq_main() {
 void irq_resched() {
     struct task_struct *current = get_current();
     if (current->resched) {
-        current->ctime = 1;
+        current->ctime   = TASK_CTIME;
         current->resched = 0;
         schedule();
     }

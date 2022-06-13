@@ -22,7 +22,7 @@ struct free_area *free_area;
 struct page *frames;
 
 struct page *get_page_from_addr(void *addr) {
-    int pfn = PHY_2_PFN(addr);
+    int pfn = PHY_2_PFN(VIRT_2_PHY(addr));
     return &frames[pfn];
 }
 

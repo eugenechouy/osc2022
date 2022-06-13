@@ -137,6 +137,6 @@ void kern_main() {
     fat_test();
     
     thread_create(user_prog);
-    // privilege_task_create(kill_zombies, 10);
+    privilege_task_create(kill_zombies, 10);
     idle_task();
 }

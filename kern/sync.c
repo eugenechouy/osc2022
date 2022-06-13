@@ -317,7 +317,10 @@ void fault_parse(unsigned long sc) {
     
     kprintf(" level %d\n", sc & 0b11);
     asm volatile("mrs %0, far_el1":"=r"(far));
-    kprintf("Address: \t0x%x\n", far);
+    if (VIRT_CHECK(far))
+        kprintf("Address: \t0x%x\n", VIRT_2_PHY(far));
+    else
+        kprintf("Address: \t0x%x\n", far);
 }
 
 void sync_main(unsigned long spsr, unsigned long elr, unsigned long esr, struct trapframe *trapframe) {

@@ -9,7 +9,7 @@
 #include "fs/vfs.h"
 
 #define MAX_PRIV_TASK_NUM 50
-#define TASK_CTIME        1
+#define TASK_CTIME        10
 
 enum task_state {
     RUNNING, READY, WAITING, INT, DEAD

@@ -266,15 +266,20 @@ void kill_zombies() {
     struct list_head *tmp;
 
     while(1) {
+        if (list_empty(&zombie_queue)) {
+            schedule();
+        }
+
+        int_disable();
         list_for_each_safe(itr, tmp, &zombie_queue) {
             to_release = list_entry(itr, struct task_struct, list);
             kprintf("Kill zombie %d\n", to_release->tid);
             kfree(to_release->stk_addr);
-            kfree(to_release->ustk_addr);
-            free_pgd(&to_release->mm);
-            kfree(to_release);
+            // free_pgd(&to_release->mm);
+            // kfree(to_release);
             list_del(itr);
         }
+        int_enable();
     }
 }
 
