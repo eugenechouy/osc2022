@@ -90,11 +90,7 @@ int __fork(void *trapframe);
 void __exit();
 void __kill(int pid);
 
-void do_exec(void (*func)());
-
-static inline void thread_create(void (*func)()) {
-    task_create(func, 100);
-}
+void thread_create(void (*func)());
 
 #define USER_STK_HIGH 0xfffffffff000
 #define USER_STK_LOW  0xffffffffb000

@@ -49,11 +49,12 @@ struct task_struct* runqueue_pop() {
     struct task_struct *next_task;
     struct prio_array *array = &runqueue.array;
 
-    runqueue.nr_running -= 1;
     highest_prio = sched_find_first_bit(array->bitmap);
     // no task in queue
     if (highest_prio == MAX_PRIO) 
         return 0;
+
+    runqueue.nr_running -= 1;
     next_task = list_entry(array->queue[highest_prio].next, struct task_struct, list);
     list_del(&next_task->list);
     if (list_empty(&array->queue[highest_prio])) 
@@ -147,7 +148,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     if (prio <= 20)
         return 0;
 
-    new_task = kmalloc(STACKSIZE);
+    new_task = kmalloc(sizeof(struct task_struct));
     if (!new_task)
         return 0;
 
@@ -174,9 +175,7 @@ struct task_struct *task_create(void (*func)(), int prio) {
     new_task->task_context.fp = stk_addr;
     new_task->task_context.sp = stk_addr;
     new_task->stk_addr        = (void*)stk_addr;
-
-    runqueue_push(new_task);
-
+    
     int_enable();
 
     return new_task;
@@ -212,8 +211,6 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
     child_trapframe->sp_el0 = parent_trapframe->sp_el0;
     child_trapframe->x[0] = 0;
     
-    int_enable();
-    
     if (list_empty(&parent->signal_list)) 
         goto out;
     // signal copy
@@ -226,7 +223,15 @@ int task_fork(void (*func)(), struct task_struct *parent, void *trapframe) {
         list_add_tail(&new_signal->list, &child->signal_list);
     }
 out:
+    runqueue_push(child);
+    int_enable();
+
     return child->tid;
+}
+
+void thread_create(void (*func)()) {
+    struct task_struct *new_taks = task_create(func, 100);
+    runqueue_push(new_taks);
 }
 
 // #############################################
