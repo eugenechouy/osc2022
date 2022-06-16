@@ -70,7 +70,16 @@ void fs_test() {
 }
 
 void fat_test() {
-    open("/boot/FAT_T.TXT", 0);
+    int fd = open("/boot/FAT_11.TXT", 0);
+    int size = 600;
+    char buf[size+1];
+    for(int i=0 ; i<size ; i++)
+        buf[i] = 'a' + (i%26);
+    buf[size] = '\0';
+    printf("%d\n", write(fd, buf, size));
+    fd = open("/boot/FAT_11.TXT", 0);
+    printf("%d\n", read(fd, buf, size));
+    printf("%s\n", buf);
 }
 
 void fs_uart_test() {

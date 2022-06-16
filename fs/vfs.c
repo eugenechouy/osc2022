@@ -96,7 +96,7 @@ struct file* create_fh(struct inode *file_node) {
     fh->inode = file_node;
     fh->f_pos = 0;
     fh->fop   = file_node->i_fop;
-    fh->cur_clus = 1; // cluster number start with 2
+    fh->cur_clus = 1; // cluster number normally start with 2
     return fh;
 }
 

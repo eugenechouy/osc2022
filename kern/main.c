@@ -134,7 +134,7 @@ void kern_main() {
     pagecache_init();
     sd_mount();
     // fs_test();
-    fat_test();
+    // fat_test();
     
     thread_create(user_prog);
     privilege_task_create(kill_zombies, 10);

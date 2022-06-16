@@ -69,9 +69,9 @@ struct fat32_info {
     unsigned int   total_sec;
 };
 
-// cache one sector in memory
+// store first cluster number of file/directory
 struct fat32_inode {
-    unsigned int  cluster;
+    unsigned int cluster;
 };
 
 // file allocation table
@@ -81,6 +81,8 @@ struct fat32_inode {
 #define FAT32_ENTRY_DEFECTIVE_CLUSTER         0x0ffffff7
 #define FAT32_ENTRY_ALLOCATED_AND_END_OF_FILE 0x0fffffff
 
+// cluster number typically start with 2
+#define FAT32_VALID_CLUS_NUM(clus) ((clus > 1) && (clus < FAT32_ENTRY_DEFECTIVE_CLUSTER))
 
 #define FAT32_DIR_ENTRY_LAST_AND_UNUSED 0x0
 #define FAT32_DIR_ENTRY_UNUSED          0xE5
